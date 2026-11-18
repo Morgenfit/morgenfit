@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Morgenfit">
+<meta name="theme-color" content="#c06a55">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>Morgenfit zu zweit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* VOICE everyday, warm and encouraging, readable from the mat
+   IDEA a gym interval clock on the wall at sunrise
+   PICTURE huge countdown with an animated stick figure doing the move
+   COLOUR sunrise coral for work, deep indigo for rest, sun yellow for warm-up and wins
+   TYPE Barlow Condensed for numbers and titles, Barlow for text
+   LAYOUT iPad landscape: figure left, clock right; portrait/phone: stacked */
+:root{color-scheme:light dark;--bg:light-dark(#fff6ef,#17141f);--card:light-dark(#ffffff,#221e2c);--ink:light-dark(#1d1a24,#f5efe9);--soft:light-dark(#6b6470,#b9b0bd);--line:light-dark(#efe1d6,#352f40);--co:#c06a55;--in:#55658f;--sun:#efd9a4;--ok:#6f9f7f}
+:root[data-theme=light]{color-scheme:light}
+:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:17px/1.5 Barlow,system-ui,sans-serif;overflow-x:clip;-webkit-tap-highlight-color:transparent}
+h1,h2,h3,.num{font-family:"Barlow Condensed",Barlow,sans-serif;letter-spacing:-.01em;line-height:1.05;margin:0}
+h1{font-size:clamp(34px,5vw,48px)}
+h2{font-size:28px;margin-bottom:10px}
+h3{font-size:22px}
+button,a.btn{font:inherit;font-weight:600;border:0;border-radius:14px;min-height:48px;padding:10px 18px;cursor:pointer;color:inherit;background:var(--line);text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+.go{background:var(--co);color:#fff;font-size:24px;min-height:68px;width:100%;font-family:"Barlow Condensed",sans-serif;letter-spacing:.01em}
+.go:active{transform:scale(.98)}
+#app{height:100%;display:grid;grid-template-rows:minmax(0,1fr) auto}
+main{overflow-y:auto;padding:max(20px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) 28px max(18px,env(safe-area-inset-left))}
+.wrap{max-width:1100px;margin:0 auto;display:grid;gap:18px}
+nav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav button{background:none;border-radius:0;min-height:68px;font-size:18px;color:var(--soft)}
+nav button.on{color:var(--co);box-shadow:inset 0 3px 0 var(--co)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px}
+.meta{color:var(--soft);font-size:15px}
+.quote{background:var(--sun);color:#2a2100;border:0}
+.quote p{font-family:"Barlow Condensed",sans-serif;font-size:clamp(26px,3.6vw,36px);line-height:1.12;margin:0 0 12px;font-weight:600;text-wrap:balance}
+.quote button{background:#2a210018;color:#2a2100}
+.today{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:18px}
+@media(max-width:760px){.today{grid-template-columns:minmax(0,1fr)}}
+.plist{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px 0 18px}
+@media(max-width:520px){.plist{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.pitem{background:var(--bg);border-radius:14px;padding:8px 10px 10px;font-size:15px;font-weight:600;line-height:1.2}
+.pitem svg{width:100%;height:auto;display:block;color:var(--ink)}
+.pick{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.pick button{min-height:44px;padding:6px 14px;font-size:16px}.pick button.on{background:var(--ink);color:var(--bg)}.pitem.xtra{outline:2px dashed var(--co);outline-offset:-2px}
+.songs{columns:2 260px;column-gap:24px;margin:8px 0;padding-left:28px;font-size:16px}.songs li{break-inside:avoid}
+.ringbox{display:grid;grid-template-columns:120px minmax(0,1fr);gap:16px;align-items:center}
+.ring text{font-family:"Barlow Condensed",sans-serif;fill:var(--ink)}
+.big{font-size:44px;font-family:"Barlow Condensed",sans-serif;font-weight:700;line-height:1}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.pill{display:inline-block;background:var(--line);border-radius:99px;padding:3px 12px;font-size:14px;font-weight:600}
+.exgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.prep{background:var(--co);color:#fff;border:0}
+.exgrid p{font-size:19px;line-height:1.45}.need{margin:0;padding-left:22px;font-size:19px;line-height:1.5}
+.exgrid svg{width:100%;height:auto;background:var(--bg);border-radius:14px;color:var(--ink)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(9em,1fr));gap:12px}
+.cal{display:grid;grid-template-columns:auto repeat(5,minmax(0,1fr));gap:6px;font-size:14px;align-items:center}
+.cal i{display:block;height:34px;border-radius:9px;background:var(--line);font-style:normal;text-align:center;line-height:34px;font-size:13px;color:var(--soft)}
+.cal i.t{background:var(--co);color:#fff}.cal i.s{background:var(--in);color:#fff}.cal i.ts{background:linear-gradient(135deg,var(--co) 50%,var(--in) 50%);color:#fff}
+.cal i.now{outline:2px solid var(--ink)}
+.badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.badge{border-radius:16px;padding:12px;background:var(--bg);border:1px dashed var(--line);color:var(--soft)}
+.badge.got{background:var(--co);color:#fff;border:0}
+.badge b{display:block;font-size:17px}
+.bar{height:10px;border-radius:9px;background:var(--line);overflow:hidden;margin-top:6px}.bar span{display:block;height:100%;background:var(--co)}
+.rew{display:grid;gap:12px}
+label.f{display:grid;gap:4px;font-weight:600;font-size:15px}
+input,select{font:inherit;font-size:16px;min-height:46px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:8px 12px}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.sw{display:flex;align-items:center;gap:10px;font-weight:600}.sw input{width:26px;min-height:26px;accent-color:var(--co)}
+details summary{cursor:pointer;font-weight:700;font-size:18px;min-height:44px;display:flex;align-items:center}
+ol{padding-left:22px}
+/* training overlay */
+#tr{position:fixed;inset:0;display:none;grid-template-rows:auto minmax(0,1fr) auto;color:#fff;background:var(--co);padding:max(14px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));transition:background .5s}
+#tr.show{display:grid}
+#tr.pause,#tr.sw{background:var(--in)}#tr.warm,#tr.cool,#tr.intro{background:var(--sun);color:#2a2100}#tr.done{background:var(--card);color:var(--ink)}
+.prog{height:8px;border-radius:9px;background:#ffffff40;overflow:hidden}.prog span{display:block;height:100%;background:currentColor;width:0}
+.top{display:grid;gap:10px}
+.topline{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:12px;font-weight:600;font-size:20px;align-items:center}
+.topline .clk{width:clamp(96px,14vw,140px);height:clamp(96px,14vw,140px)}
+.clk{width:76px;height:76px;flex:none}.hdr{display:flex;justify-content:space-between;gap:16px;align-items:center}.hdr .clk{width:110px;height:110px}
+.stage{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:20px;align-items:center}
+@media(max-aspect-ratio:1/1),(max-width:700px){.stage{grid-template-columns:minmax(0,1fr);gap:8px;align-content:center}}
+.stage svg{width:100%;max-height:66vh;color:currentColor}
+@media(max-aspect-ratio:1/1),(max-width:700px){.stage svg{max-height:48vh}}
+.clock{text-align:center}
+.lab{font-size:clamp(20px,3vw,28px);font-weight:600;opacity:.9}
+.exn{font-family:"Barlow Condensed",sans-serif;font-size:clamp(30px,4.4vw,52px);font-weight:700;line-height:1.02;text-wrap:balance}
+.sec{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:clamp(80px,13vw,180px);line-height:.9;font-variant-numeric:tabular-nums}
+.tip{font-size:clamp(22px,3.2vw,32px);line-height:1.3;max-width:32ch;margin:6px auto 0;text-wrap:balance}
+.ctr{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.ctr button,.ctr a{background:#ffffff2e;color:inherit;min-width:170px;min-height:72px;font-size:22px;padding:12px 28px;border-radius:18px}
+@media(max-width:600px){.ctr button,.ctr a{min-width:0;flex:1 1 40%;font-size:19px}}
+#tr.warm .ctr button,#tr.cool .ctr button,#tr.intro .ctr button,#tr.warm .ctr a,#tr.cool .ctr a{background:#2a21001c}
+.intro-q{font-family:"Barlow Condensed",sans-serif;font-size:clamp(36px,6vw,72px);font-weight:700;line-height:1.05;text-align:center;max-width:22ch;margin:0 auto;text-wrap:balance}
+.donebox{max-width:760px;margin:0 auto;display:grid;gap:16px;overflow-y:auto;align-content:start;padding-top:10px}
+.knee{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center}
+.amp{display:flex;gap:8px}
+.amp button{min-width:84px;font-size:15px;border:2px solid transparent}
+.amp button.g.on{background:var(--ok);color:#fff}.amp button.y.on{background:var(--sun);color:#2a2100}.amp button.r.on{background:var(--co);color:#fff}
+.seg{display:flex;gap:8px;flex-wrap:wrap}.seg button.on{background:var(--ink);color:var(--bg)}
+#conf{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;display:none}#conf.on{display:block}
+.new{background:var(--co);color:#fff;border-radius:16px;padding:12px 16px;font-weight:600}
+@media(prefers-reduced-motion:reduce){#tr{transition:none}}
+</style>
+</head>
+<body>
+<div id="app">
+<main><div class="wrap" id="view"></div></main>
+<nav id="nav">
+<button data-t="heute" class="on">Heute</button>
+<button data-t="uebungen">Übungen</button>
+<button data-t="erfolge">Erfolge</button>
+<button data-t="einst">Einstellungen</button>
+</nav>
+</div>
+<section id="tr" aria-live="polite"></section>
+<canvas id="conf"></canvas>
+<script>
+{
+// ---------- Figuren: [Kopf, Nacken, Rückenmitte, Hüfte, Ellbogen1, Hand1, Ellbogen2, Hand2, Knie1, Fuß1, Knie2, Fuß2]
+const POSES={
+warm:[[[100,30],[100,44],[100,62],[100,80],[90,60],[86,76],[112,56],[120,44],[116,86],[113,108],[100,104],[100,128]],[[100,30],[100,44],[100,62],[100,80],[112,56],[120,44],[90,60],[86,76],[100,104],[100,128],[116,86],[113,108]]],
+katze:[[[146,100],[132,84],[103,68],[74,84],[134,104],[134,126],[131,104],[131,126],[74,126],[42,126],[71,126],[39,126]],[[150,70],[134,84],[103,94],[74,82],[134,104],[134,126],[131,104],[131,126],[74,126],[42,126],[71,126],[39,126]]],
+wgs:[[[150,74],[137,82],[116,90],[95,100],[138,104],[136,126],[134,104],[131,126],[132,96],[136,126],[62,126],[32,124]],[[122,46],[118,62],[106,80],[95,100],[132,100],[136,126],[118,38],[116,14],[132,96],[136,126],[62,126],[32,124]]],
+kaefer:[[[148,112],[132,116],[106,117],[80,117],[132,96],[132,76],[129,96],[129,76],[80,90],[56,90],[77,90],[53,90]],[[148,112],[132,116],[106,117],[80,117],[152,108],[174,114],[129,96],[129,76],[80,90],[56,90],[56,108],[30,114]]],
+seit:[[[138,88],[128,100],[106,112],[86,120],[128,126],[148,126],[110,102],[92,112],[62,126],[42,112],[60,124],[40,110]],[[140,82],[128,96],[107,100],[86,104],[128,126],[148,126],[130,76],[132,54],[62,126],[42,112],[60,124],[40,110]]],
+bruecke:[[[156,116],[140,120],[118,121],[96,121],[122,124],[102,125],[120,124],[100,125],[76,96],[62,126],[74,96],[60,126]],[[156,116],[140,120],[118,108],[96,96],[122,124],[102,125],[120,124],[100,125],[64,94],[62,126],[62,94],[60,126]]],
+kind:[[[136,116],[122,110],[98,104],[70,108],[146,120],[168,124],[144,121],[166,125],[100,124],[64,126],[98,125],[62,126]],[[164,78],[150,86],[124,82],[98,86],[151,106],[152,126],[146,62],[142,38],[100,124],[66,126],[98,125],[64,126]]],
+cool:[[[100,30],[100,44],[100,62],[100,80],[112,56],[124,50],[94,62],[88,84],[100,104],[100,128],[98,104],[88,84]],[[100,30],[100,44],[100,62],[100,80],[94,62],[88,84],[112,56],[124,50],[98,104],[88,84],[100,104],[100,128]]]
+};
+const WARM={id:'warm',name:'Aufwärmen',tip:'Auf der Stelle marschieren, Arme kreisen, Schultern rollen.',per:1.3};
+const COOL={id:'cool',name:'Ausklang',tip:'Oberschenkel vorne dehnen, an der Wand festhalten. Seite wechseln.',per:7};
+const EX=[
+{id:'katze',name:'Katze-Kuh',tip:'Ausatmen: Rücken rund. Einatmen: leichtes Hohlkreuz.',per:5,v:'https://www.youtube.com/watch?v=V1oVlhirY1o'},
+{id:'wgs',name:'Weltbeste Dehnung',tip:'Hinteres Knie auf der Matte, Arm zur Decke aufdrehen.',side:1,per:4,v:'https://www.youtube.com/watch?v=8sDu-43eJQo'},
+{id:'kaefer',name:'Toter Käfer',tip:'Unteren Rücken in den Boden drücken, Arm und Bein gegengleich strecken.',per:3,v:'https://www.youtube.com/watch?v=WHmEHsyUlX0'},
+{id:'seit',name:'Seitstütz auf den Knien',tip:'Ellbogen unter der Schulter, Hüfte hoch bis zur Linie.',side:1,per:3,v:'https://www.youtube.com/shorts/0jGIxvFLNWA'},
+{id:'bruecke',name:'Brücke',tip:'Füße nah am Po, über die Fersen hochdrücken, oben Po anspannen.',per:3,v:'https://www.youtube.com/watch?v=Frl3QaFCVu8'},
+{id:'kind',name:'Kind-Position mit Drehung',tip:'Bei Kniedruck ein Kissen zwischen Po und Fersen. Dann einen Arm aufdrehen.',side:1,per:5,v:'https://www.youtube.com/watch?v=uenqxybA9kU'}
+];
+const ALL={warm:WARM,cool:COOL};EX.forEach(e=>ALL[e.id]=e);
+// ---------- Weitere Übungen (Woche A Di–Do, Woche B Mo–Do)
+const IX={h:0,n:1,m:2,p:3,e1:4,a1:5,e2:6,a2:7,k1:8,f1:9,k2:10,f2:11};
+const PP=(b,o={})=>{const r=b.map(x=>[...x]);for(const k in o)r[IX[k]]=o[k];return r};
+const MIR=a=>a.map(([x,y])=>[200-x,y]);
+const ST=[[100,30],[100,44],[100,62],[100,80],[102,64],[104,84],[98,64],[96,84],[102,104],[102,128],[98,104],[98,128]];
+const QB=[[146,78],[132,84],[103,82],[74,84],[134,104],[134,126],[131,104],[131,126],[74,126],[42,126],[71,126],[39,126]];
+const BOX=[[104,30],[102,44],[101,62],[100,80],[112,58],[116,44],[110,60],[114,46],[106,104],[110,128],[94,104],[88,128]];
+const WALL='<rect x="170" y="10" width="6" height="118" rx="2"/>';
+const add={};const X=(id,name,tip,A,B,o={})=>{add[id]=[A,B];return{id,name,tip,...o}};
+const WAND_A=[[140,48],[130,58],[113,74],[95,92],[150,66],[168,58],[149,68],[168,60],[83,110],[70,128],[82,111],[68,128]];
+const WAND_B=[[152,46],[142,56],[121,72],[100,90],[152,72],[168,58],[151,74],[168,60],[85,109],[70,128],[84,110],[68,128]];
+const BR_UP=[[156,116],[140,120],[118,108],[96,96],[122,124],[102,125],[120,124],[100,125],[64,94],[62,126],[62,94],[60,126]];
+const SIDE=[[160,108],[146,116],[120,121],[96,122],[150,120],[166,110],[128,112],[124,124],[72,124],[48,125],[72,121],[48,121]];
+const WA=PP(ST,{e1:[112,54],a1:[126,52]});
+const MORE=[
+// Di A – Kraft
+X('stuhl','Stuhlkniebeuge','Po nach hinten schieben, den Stuhl nur antippen. Knie zeigen über die Fußspitzen.',PP(ST,{e1:[112,58],a1:[126,56],e2:[110,60],a2:[124,58]}),PP(ST,{h:[104,50],n:[96,62],m:[86,78],p:[80,94],k1:[104,100],f1:[102,128],k2:[102,100],f2:[98,128],e1:[110,66],a1:[126,62],e2:[108,68],a2:[124,64]}),{per:3.5,prop:'<rect x="50" y="97" width="34" height="5" rx="2"/><rect x="50" y="58" width="5" height="70" rx="2"/><rect x="79" y="100" width="5" height="28" rx="2"/>',q:'Kniebeuge zum Stuhl Anleitung'}),
+X('wand','Liegestütz an der Wand','Körper bleibt gerade wie ein Brett, Brust langsam zur Wand.',WAND_A,WAND_B,{per:3,prop:WALL,q:'Wandliegestütz Anleitung'}),
+X('bruecke1','Einbeinige Brücke','Ein Bein gestreckt, über die Ferse des anderen hochdrücken. Nach der Hälfte Bein wechseln.',[[156,116],[140,120],[118,121],[96,121],[122,124],[102,125],[120,124],[100,125],[76,96],[62,126],[72,108],[50,96]],[[156,116],[140,120],[118,108],[96,96],[122,124],[102,125],[120,124],[100,125],[64,94],[62,126],[72,90],[48,86]],{per:3,side:1,q:'einbeinige Brücke Übung'}),
+X('seitbein','Seitliches Beinheben','In Seitenlage das obere Bein gestreckt anheben, Fußspitze zeigt nach vorn.',SIDE,PP(SIDE,{k2:[73,110],f2:[51,98]}),{per:2.5,side:1,q:'seitliches Beinheben liegend'}),
+X('rudern','Rudern mit Wasserflaschen','Oberkörper vorgeneigt, Rücken gerade, Ellbogen eng nach hinten ziehen.',[[134,52],[122,58],[106,68],[90,80],[124,76],[126,94],[121,77],[123,95],[100,104],[98,128],[97,104],[95,128]],[[134,52],[122,58],[106,68],[90,80],[106,64],[118,76],[104,66],[116,78],[100,104],[98,128],[97,104],[95,128]],{per:2.5,q:'vorgebeugtes Rudern Kurzhantel Anleitung'}),
+X('waden','Wadenheben','An der Wand festhalten, langsam auf die Zehen und langsam wieder runter.',WA,WA.map((p,i)=>i==9||i==11?p:[p[0],p[1]-7]),{per:2.5,prop:'<rect x="128" y="20" width="6" height="108" rx="2"/>',q:'Wadenheben stehend Anleitung'}),
+// Mi A – Cardio
+X('knie','Knie hochziehen','Zügig auf der Stelle, Knie bis Hüfthöhe, Arme schwingen mit.',POSES.warm[0],POSES.warm[1],{per:.8,q:'High Knees ohne Springen'}),
+X('boxen','Schattenboxen','Locker in den Knien, abwechselnd nach vorn boxen.',BOX,PP(BOX,{e1:[122,46],a1:[144,44]}),{per:.7,q:'Schattenboxen Anfänger'}),
+X('berg','Stehende Bergsteiger','Knie diagonal zum gegenüberliegenden Ellbogen ziehen, im Wechsel.',PP(ST,{e1:[108,28],a1:[112,12],e2:[92,28],a2:[88,12]}),PP(ST,{h:[104,32],n:[102,46],k1:[112,84],f1:[108,106],e2:[110,66],a2:[100,54],e1:[108,30],a1:[112,14]}),{per:1,q:'standing mountain climbers'}),
+X('seit2','Seitschritte mit Armschwung','Großer Schritt zur Seite, Arme schwingen nach oben.',PP(ST,{f1:[130,128],k1:[120,104],f2:[70,128],k2:[80,104],e1:[116,40],a1:[128,24],e2:[84,40],a2:[72,24]}),PP(ST,{f1:[106,128],k1:[104,104],f2:[94,128],k2:[96,104]}),{per:1,q:'Seitschritte Cardio Armschwung'}),
+X('hampel','Hampelmann ohne Sprung','Ein Bein zur Seite tippen, Arme über den Kopf, dann wechseln.',ST,PP(ST,{k1:[116,104],f1:[132,126],e1:[114,30],a1:[122,12],e2:[86,30],a2:[78,12]}),{per:.9,q:'Hampelmann ohne Springen'}),
+X('holz','Holzhacker','Flasche diagonal von oben nach unten ziehen. Nach der Hälfte Seite wechseln.',PP(ST,{e1:[116,30],a1:[128,16],e2:[114,32],a2:[126,18]}),[[94,38],[96,51],[98,68],[100,86],[84,74],[72,92],[86,76],[74,94],[110,106],[112,128],[90,106],[88,128]],{per:1.6,side:1,q:'Holzhacker Übung stehend'}),
+// Do A – Partner & Gleichgewicht
+X('ballw','Einbeinstand mit Ballwurf','Auf einem Bein stehen und euch den Ball zuwerfen. Nach der Hälfte Bein wechseln.',[[50,30],[50,44],[50,62],[50,80],[60,52],[70,40],[58,54],[68,42],[50,104],[50,128],[62,92],[58,110]],[[50,30],[50,44],[50,62],[50,80],[64,46],[80,44],[63,48],[79,46],[50,104],[50,128],[62,92],[58,110]],{per:2,side:1,pair:1,prop:'<circle cx="100" cy="44" r="6"/>',q:'Einbeinstand Ball werfen Gleichgewicht'}),
+X('rrsitz','Rücken an Rücken sitzen','Rücken aneinander, gemeinsam langsam bis etwa 45 Grad in die Knie gehen und halten.',[[95,30],[97,44],[98,62],[99,80],[89,58],[95,54],[88,60],[94,56],[97,104],[95,128],[95,104],[93,128]],[[97,47],[99,60],[99,78],[99,96],[87,70],[93,64],[86,72],[92,66],[77,98],[79,128],[75,99],[77,128]],{per:5,pair:1,q:'Partner Wandsitz Rücken an Rücken'}),
+X('lklatsch','Liegestütz-Abklatschen','Auf den Knien im Stütz gegenüber, abwechselnd abklatschen.',[[86,86],[76,92],[58,100],[40,108],[77,108],[78,126],[75,108],[76,126],[28,126],[12,118],[30,126],[14,118]],[[86,86],[76,92],[58,100],[40,108],[77,108],[78,126],[86,90],[96,82],[28,126],[12,118],[30,126],[14,118]],{per:1.4,pair:1,q:'Partner Liegestütz abklatschen'}),
+X('ausfall','Ausfallschritt rückwärts','Kleiner Schritt nach hinten, nur leicht in die Knie, im Wechsel.',PP(ST,{e1:[110,70],a1:[104,80],e2:[92,70],a2:[96,80]}),[[101,42],[100,56],[99,74],[98,92],[108,76],[103,90],[90,76],[95,90],[116,106],[118,128],[80,112],[62,126]],{per:2.5,q:'Ausfallschritt rückwärts knieschonend'}),
+X('pklatsch','Plank mit Abklatschen','Unterarmstütz auf den Knien gegenüber, im Wechsel eine Hand zum Abklatschen.',[[86,88],[76,93],[58,98],[40,104],[76,126],[92,126],[74,126],[90,126],[28,126],[12,116],[30,126],[14,116]],[[86,88],[76,93],[58,98],[40,104],[76,126],[92,126],[86,92],[97,84],[28,126],[12,116],[30,126],[14,116]],{per:1.6,pair:1,q:'Partner Plank abklatschen'}),
+X('hueft','Hüftbeuger dehnen','Hinteres Knie auf der Matte, Hüfte sanft nach vorn schieben.',[[103,48],[102,62],[101,80],[100,98],[110,80],[118,96],[108,82],[116,98],[126,100],[132,127],[84,126],[60,124]],[[112,48],[111,62],[110,80],[108,98],[118,80],[124,96],[116,82],[122,98],[128,100],[132,127],[84,126],[60,124]],{per:5,side:1,q:'Hüftbeuger dehnen kniend'}),
+// Mo B – Beweglichkeit
+X('vogel','Vogel-Hund','Im Vierfüßlerstand Arm und gegenüberliegendes Bein strecken, der Rücken bleibt ruhig.',QB,PP(QB,{e1:[152,80],a1:[172,78],k2:[52,84],f2:[24,82]}),{per:3.5,side:1,q:'Bird Dog Übung Anleitung'}),
+X('huefkreis','Hüftkreisen im Vierfüßlerstand','Die Hüfte langsam in großen Kreisen bewegen. Nach der Hälfte Richtung wechseln.',PP(QB,{p:[66,90],m:[98,86]}),PP(QB,{p:[80,80],m:[106,80]}),{per:3,side:1,q:'Hüftkreisen Vierfüßlerstand'}),
+X('drehung','Liegende Drehung','Rückenlage, Knie angewinkelt langsam zur Seite sinken lassen, Schultern bleiben unten.',[[156,116],[140,120],[118,121],[96,121],[150,124],[168,126],[138,124],[120,126],[78,96],[64,124],[76,97],[62,124]],[[156,116],[140,120],[118,121],[96,121],[150,124],[168,126],[138,124],[120,126],[76,112],[60,122],[74,113],[58,122]],{per:5,q:'liegende Drehung Wirbelsäule Knie zur Seite'}),
+X('uplank','Unterarmstütz auf den Knien','Ellbogen unter den Schultern, Bauch fest, ruhig atmen.',[[136,88],[126,93],[108,98],[90,104],[126,126],[142,126],[124,126],[140,126],[78,126],[62,116],[80,126],[64,116]],[[136,88],[126,93],[108,101],[90,108],[126,126],[142,126],[124,126],[140,126],[78,126],[62,116],[80,126],[64,116]],{per:4,q:'Unterarmstütz auf Knien Anleitung'}),
+X('addu','Adduktoren-Schaukel','Im Vierfüßlerstand ein Bein seitlich ausstrecken, den Po langsam nach hinten schaukeln.',QB,PP(QB,{p:[58,96],m:[90,92],n:[120,94],h:[134,92],e1:[127,110],e2:[125,110]}),{per:4,side:1,q:'Adduktoren Schaukel Vierfüßlerstand'}),
+X('sphinx','Sphinx','Bauchlage auf den Unterarmen, Brust sanft anheben, Schultern weg von den Ohren.',[[138,90],[126,102],[104,116],[80,123],[124,126],[142,126],[122,126],[140,126],[54,124],[30,124],[54,125],[30,125]],[[140,84],[126,98],[104,115],[80,123],[124,126],[142,126],[122,126],[140,126],[54,124],[30,124],[54,125],[30,125]],{per:5,q:'Sphinx Yoga Anleitung'}),
+// Di B – Kraft
+X('hinge','Hüftbeuge','Knie leicht gebeugt, Po nach hinten schieben, mit geradem Rücken nach vorn neigen.',ST,[[132,54],[120,58],[102,68],[86,80],[116,74],[112,92],[114,75],[110,93],[100,104],[98,128],[98,104],[96,128]],{per:3,q:'Hip Hinge Anleitung'}),
+X('press','Schulterdrücken mit Flaschen','Flaschen von den Schultern gerade nach oben drücken, Bauch fest.',PP(ST,{e1:[116,56],a1:[112,42],e2:[84,56],a2:[88,42]}),PP(ST,{e1:[112,30],a1:[110,12],e2:[88,30],a2:[90,12]}),{per:2.5,q:'Schulterdrücken Kurzhantel stehend'}),
+X('bmarsch','Brücke mit Marschieren','In der Brücke bleiben und im Wechsel ein Knie anheben.',BR_UP,PP(BR_UP,{k2:[82,74],f2:[64,84]}),{per:1.8,q:'Glute Bridge March'}),
+X('muschel','Muschel mit Band','Seitenlage, Knie angewinkelt, das obere Knie öffnen, die Füße bleiben zusammen.',PP(SIDE,{k1:[78,124],f1:[58,125],k2:[78,120],f2:[58,122]}),PP(SIDE,{k1:[78,124],f1:[58,125],k2:[80,100],f2:[58,122]}),{per:2.2,side:1,q:'Clamshell Übung Theraband'}),
+X('kliege','Liegestütz auf den Knien','Körper gerade von Knie bis Kopf, Brust langsam Richtung Boden.',[[136,86],[126,92],[108,100],[90,108],[127,108],[128,126],[125,108],[126,126],[78,126],[62,116],[80,126],[64,116]],[[138,104],[126,110],[108,112],[90,114],[116,114],[128,126],[114,115],[126,126],[78,126],[62,116],[80,126],[64,116]],{per:2.5,q:'Liegestütz auf Knien Anleitung'}),
+X('superman','Superman','Bauchlage, Arme und Beine gleichzeitig leicht anheben, Blick zum Boden.',[[160,118],[146,122],[120,124],[94,124],[164,124],[182,124],[162,125],[180,125],[68,124],[42,124],[68,125],[42,125]],[[160,108],[146,114],[120,123],[94,124],[164,110],[182,104],[162,111],[180,105],[68,120],[42,112],[68,121],[42,113]],{per:3,q:'Superman Übung Rücken'}),
+// Mi B – Cardio
+X('skater','Eisschnellläufer','Seitlicher Schritt, das andere Bein hinten antippen, Arme schwingen mit. Kein Sprung.',[[100,40],[102,52],[104,68],[106,86],[92,62],[84,76],[114,58],[124,50],[112,106],[114,128],[94,110],[80,126]],null,{per:1.4,mir:1,q:'Skater Übung ohne Springen'}),
+X('uppercut','Boxhaken nach oben','Abwechselnd von unten nach oben boxen, leicht aus der Hüfte drehen.',BOX,PP(BOX,{e1:[118,58],a1:[120,36]}),{per:.8,q:'Uppercut Boxen Fitness'}),
+X('sidecrunch','Seitlicher Knie-Ellbogen-Crunch','Hände am Kopf, Knie seitlich zum Ellbogen ziehen. Nach der Hälfte Seite wechseln.',PP(ST,{e1:[118,36],a1:[106,26],e2:[82,36],a2:[94,26]}),PP(ST,{h:[110,34],n:[106,47],m:[103,64],e1:[120,62],a1:[110,42],e2:[84,40],a2:[96,30],k1:[124,92],f1:[122,112]}),{per:1.2,side:1,q:'standing side crunch'}),
+X('butt','Fersen zum Po','Zügig auf der Stelle gehen und die Fersen Richtung Po ziehen.',PP(ST,{k1:[98,104],f1:[80,94],e1:[110,58],a1:[116,46],e2:[92,66],a2:[86,80]}),PP(ST,{k2:[98,104],f2:[80,94],e2:[110,58],a2:[116,46],e1:[92,66],a1:[86,80]}),{per:.7,q:'Butt Kicks ohne Springen'}),
+X('kraul','Kraularme im Stand','Die Arme wie beim Kraulen kreisen, die Knie bleiben locker.',PP(ST,{e1:[110,30],a1:[116,14],e2:[90,62],a2:[84,78]}),PP(ST,{e2:[110,30],a2:[116,14],e1:[90,62],a1:[84,78]}),{per:1,q:'Kraul Arme im Stand Übung'}),
+X('wandschnell','Schnelle Wandliegestütze','Wie der Liegestütz an der Wand, nur im flotten Tempo.',WAND_A,WAND_B,{per:1.1,prop:WALL,q:'Wandliegestütz schnell'}),
+// Do B – Partner
+X('tau','Handtuch-Tauziehen','Ein Handtuch halten und euch gegenseitig ziehen, der Rumpf bleibt fest.',[[45,30],[47,44],[49,62],[52,80],[66,58],[86,62],[64,60],[86,64],[56,104],[58,128],[48,104],[46,128]],[[33,38],[37,50],[42,66],[48,84],[60,60],[82,64],[58,62],[82,66],[56,106],[58,128],[46,106],[44,128]],{per:2.5,pair:1,prop:'<rect x="82" y="61" width="36" height="5" rx="2"/>',q:'Partnerübung Handtuch ziehen'}),
+X('spiegel','Spiegel-Balance','Einer macht eine Balance-Pose vor, der andere spiegelt sie. Nach der Hälfte wechseln.',[[50,30],[50,44],[50,62],[50,80],[62,50],[76,46],[40,52],[26,48],[50,104],[50,128],[62,92],[58,110]],[[70,42],[62,50],[56,64],[50,80],[70,52],[84,48],[52,58],[40,52],[50,104],[50,128],[34,86],[16,90]],{per:4,side:1,pair:1,q:'Partner Balance Übung Spiegel'}),
+X('situp','Sit-up mit Abklatschen','Gegenüber, die Füße aneinander, gemeinsam hochkommen und abklatschen.',[[10,116],[22,120],[36,121],[50,122],[30,114],[38,112],[30,116],[38,114],[66,100],[84,126],[64,101],[82,126]],[[60,74],[56,86],[52,104],[50,122],[70,84],[86,78],[68,86],[84,80],[66,100],[84,126],[64,101],[82,126]],{per:2.2,pair:1,q:'Partner Sit up abklatschen'}),
+X('ballrot','Ball übergeben Rücken an Rücken','Rücken an Rücken stehen und den Ball seitlich übergeben, immer im Kreis.',[[95,30],[97,44],[98,62],[99,80],[90,60],[82,66],[88,62],[80,68],[97,104],[95,128],[95,104],[93,128]],[[95,30],[97,44],[98,62],[99,80],[100,58],[106,62],[99,60],[105,64],[97,104],[95,128],[95,104],[93,128]],{per:2,pair:1,q:'Partner Ball übergeben Rücken an Rücken'}),
+X('waage','Standwaage zu zweit','An den Händen fassen und auf einem Bein nach vorn neigen. Nach der Hälfte Bein wechseln.',[[50,30],[50,44],[50,62],[50,80],[64,62],[80,64],[62,64],[78,66],[50,104],[50,128],[48,104],[48,128]],[[86,62],[76,68],[62,74],[50,82],[86,76],[98,74],[84,78],[96,76],[50,104],[50,128],[32,86],[14,86]],{per:4,side:1,pair:1,q:'Standwaage Partner'}),
+X('brust','Brust dehnen','Arme nach hinten führen, der Partner zieht sie ganz sanft weiter. Dann wechseln.',ST,PP(ST,{n:[104,44],h:[106,30],m:[102,62],e1:[88,56],a1:[74,62],e2:[86,58],a2:[72,64]}),{per:5,q:'Brustdehnung mit Partner'})
+];
+for(const k in add)POSES[k]=[add[k][0],add[k][1]||MIR(add[k][0])];
+['rrsitz','ballrot'].forEach(k=>POSES[k]=POSES[k].map(f=>f.map(([x,y])=>[x-6,y])));
+MORE.forEach(e=>{ALL[e.id]=e;if(!e.v)e.v='https://www.youtube.com/results?search_query='+encodeURIComponent(e.q||e.name)});
+const PLAN={A:{1:['katze','wgs','kaefer','seit','bruecke','kind'],2:['stuhl','wand','bruecke1','seitbein','rudern','waden'],3:['knie','boxen','berg','seit2','hampel','holz'],4:['ballw','rrsitz','lklatsch','ausfall','pklatsch','hueft']},B:{1:['vogel','huefkreis','drehung','uplank','addu','sphinx'],2:['hinge','press','bmarsch','muschel','kliege','superman'],3:['skater','uppercut','sidecrunch','butt','kraul','wandschnell'],4:['tau','spiegel','situp','ballrot','waage','brust']}};
+const DAYN={1:'Montag',2:'Dienstag',3:'Mittwoch',4:'Donnerstag'};
+const BOXL='Musikbox und iPad mit Blick auf die Matte';
+const NEED={A1:['2 Matten','2 Kissen für die Knie (Kind-Position)',BOXL],
+A2:['2 Matten','2 stabile Stühle ohne Rollen','4 volle Wasserflaschen (0,5 bis 1,5 Liter)','Ein Stück freie Wand',BOXL],
+A3:['Feste, rutschfeste Schuhe','2 volle Wasserflaschen für den Holzhacker','Etwas zu trinken',BOXL],
+A4:['2 Matten','Ein weicher Ball',BOXL],
+B1:['2 Matten','2 Kissen für die Knie',BOXL],
+B2:['2 Matten','4 volle Wasserflaschen','2 Therabänder für die Muschel',BOXL],
+B3:['Feste, rutschfeste Schuhe','Ein Stück freie Wand','Etwas zu trinken',BOXL],
+B4:['2 Matten','Ein Handtuch','Ein weicher Ball',BOXL]};
+const wkOf=d=>kw(d)%2?'B':'A';
+const defDay=d=>{const w=d.getDay();return w>=1&&w<=4?w:w===5?3:1};
+let CUR=null;const cur=()=>CUR||(CUR={wk:wkOf(new Date()),d:defDay(new Date())});
+const LIEGE_A=[[140,80],[128,86],[106,94],[84,102],[129,106],[130,126],[127,106],[128,126],[58,113],[32,124],[58,114],[32,125]];
+const PLANK_A=[[146,86],[134,92],[110,98],[86,104],[134,126],[150,126],[132,126],[148,126],[60,114],[34,124],[60,115],[34,125]];
+const EXTRA=[
+X('plank','Unterarmstütz','Ellbogen unter den Schultern, Beine gestreckt, Körper wie ein Brett. Wenn nötig, die Knie ablegen.',PLANK_A,PP(PLANK_A,{p:[86,108],m:[110,101]}),{per:4,q:'Unterarmstütz Plank Anleitung'}),
+X('wandsitz','Wandsitz','Rücken an die Wand und nur so tief gehen, wie die Knie es mögen. Höchstens bis zum rechten Winkel.',[[66,30],[64,44],[63,62],[64,80],[70,62],[76,80],[68,62],[74,80],[66,104],[68,128],[64,104],[66,128]],[[68,46],[66,60],[65,78],[66,96],[74,78],[82,92],[72,78],[80,92],[92,98],[94,128],[90,99],[92,128]],{per:5,prop:'<rect x="50" y="10" width="6" height="118" rx="2"/>',q:'Wandsitz Anleitung knieschonend'}),
+X('liegevoll','Liegestütz','Klassisch auf den Füßen, der Körper bleibt gerade. Wenn es nicht mehr geht, auf die Knie wechseln.',LIEGE_A,[[142,102],[128,106],[106,111],[84,116],[116,112],[130,126],[114,113],[128,126],[58,120],[32,125],[58,121],[32,126]],{per:2.5,q:'Liegestütz richtig Anleitung'}),
+X('bergboden','Bergsteiger am Boden','Im Liegestütz die Knie im Wechsel zur Brust ziehen, ruhig und kontrolliert.',PP(LIEGE_A,{k1:[104,110],f1:[86,120]}),PP(LIEGE_A,{k2:[104,110],f2:[86,120]}),{per:1.2,q:'Mountain Climbers langsam Anleitung'}),
+X('seitvoll','Seitstütz gestreckt','Auf dem Unterarm, Beine gestreckt übereinander, Hüfte hoch. Nach der Hälfte Seite wechseln.',[[138,90],[128,100],[106,108],[84,114],[128,126],[148,126],[110,102],[92,112],[58,120],[32,125],[58,121],[32,126]],[[140,80],[128,96],[106,100],[84,104],[128,126],[148,126],[130,76],[132,54],[58,115],[32,124],[58,116],[32,125]],{per:3,side:1,q:'Seitstütz Unterarm Anleitung'})];
+EXTRA.forEach(e=>{POSES[e.id]=add[e.id];ALL[e.id]=e;e.v='https://www.youtube.com/results?search_query='+encodeURIComponent(e.q)});
+const XTRA={A1:['sphinx','vogel','plank'],A2:['muschel','wandsitz','liegevoll'],A3:['kraul','skater','bergboden'],A4:['brust','spiegel','situp'],B1:['katze','wgs','seitvoll'],B2:['seitbein','wandsitz','liegevoll'],B3:['knie','hampel','bergboden'],B4:['hueft','lklatsch','rrsitz']};
+const LVL=['Soft','Mittel','Schwer'];
+const exs=()=>{const c=cur(),l=PLAN[c.wk][c.d].map(id=>ALL[id]);if(c.x)l.push(ALL[XTRA[c.wk+c.d][c.x-1]]);return l};
+const SONGS={"b": ["Jack Johnson - Upside Down", "Jack Johnson - Banana Pancakes", "Norah Jones - Don't Know Why", "Norah Jones - Come Away with Me", "Bill Withers - Lovely Day", "Bill Withers - Ain't No Sunshine", "Otis Redding - (Sittin' On) The Dock of the Bay", "Sam Cooke - Wonderful World", "Louis Armstrong - What a Wonderful World", "Bob Marley & The Wailers - Three Little Birds", "Bob Marley & The Wailers - Is This Love", "UB40 - Red Red Wine", "UB40 - Kingston Town", "Eagles - Hotel California", "Eagles - Take It Easy", "Fleetwood Mac - Dreams", "Fleetwood Mac - Everywhere", "Simon & Garfunkel - Mrs. Robinson", "Simon & Garfunkel - The Boxer", "Paul Simon - Graceland", "Cat Stevens - Wild World", "Cat Stevens - Father and Son", "James Taylor - Fire and Rain", "Carole King - It's Too Late", "The Beatles - Here Comes the Sun", "The Beatles - Let It Be", "John Lennon - Imagine", "Elton John - Your Song", "Elton John - Tiny Dancer", "Billy Joel - Piano Man", "Dire Straits - Sultans of Swing", "Dire Straits - Brothers in Arms", "Chris Rea - On the Beach", "Chris Rea - Josephine", "Sade - Smooth Operator", "Sade - By Your Side", "Phil Collins - Another Day in Paradise", "Phil Collins - In the Air Tonight", "Sting - Fields of Gold", "Sting - Englishman in New York", "The Police - Every Breath You Take", "Eric Clapton - Wonderful Tonight", "Eric Clapton - Tears in Heaven", "Toto - Africa", "Lionel Richie - Easy", "Stevie Wonder - Isn't She Lovely", "Al Green - Let's Stay Together", "Ben E. King - Stand by Me", "Van Morrison - Brown Eyed Girl", "Van Morrison - Moondance", "Tracy Chapman - Fast Car", "Suzanne Vega - Tom's Diner", "Enya - Orinoco Flow", "Moby - Porcelain", "Massive Attack - Teardrop", "Morcheeba - The Sea", "Air - All I Need", "Coldplay - Yellow", "Coldplay - The Scientist", "Ed Sheeran - Perfect", "Ed Sheeran - Photograph", "John Legend - All of Me", "Adele - Someone like You", "Adele - Make You Feel My Love", "Amy Winehouse - Back to Black", "Michael Bublé - Feeling Good", "Jason Mraz - I'm Yours", "James Blunt - You're Beautiful", "Passenger - Let Her Go", "Lukas Graham - 7 Years", "Hozier - Take Me to Church", "Lewis Capaldi - Someone You Loved", "Billie Eilish - Ocean Eyes", "Keane - Somewhere Only We Know", "Snow Patrol - Chasing Cars", "Travis - Why Does It Always Rain on Me?", "Oasis - Wonderwall", "R.E.M. - Everybody Hurts", "R.E.M. - Losing My Religion", "The Cranberries - Linger", "The Cranberries - Dreams", "Jeff Buckley - Hallelujah", "Israel Kamakawiwo'ole - Somewhere over the Rainbow", "Reinhard Mey - Über den Wolken", "Herbert Grönemeyer - Der Weg", "Herbert Grönemeyer - Mensch", "Xavier Naidoo - Dieser Weg", "Philipp Poisel - Wie soll ein Mensch das ertragen", "Max Giesinger - 80 Millionen", "Tim Bendzko - Nur noch kurz die Welt retten", "Andreas Bourani - Nur in meinem Kopf", "Silbermond - Das Beste", "Rosenstolz - Liebe ist alles", "Element of Crime - Delmenhorst", "Peter Maffay - Über sieben Brücken musst du gehn", "Udo Lindenberg - Cello", "Marius Müller-Westernhagen - Freiheit", "Pur - Abenteuerland", "Norah Jones - Sunrise", "Jack Johnson - Better Together"], "k": ["Michael Jackson - Billie Jean", "Mark Ronson feat. Bruno Mars - Uptown Funk", "Daft Punk feat. Pharrell Williams - Get Lucky", "Queen - Another One Bites the Dust", "Queen - We Will Rock You", "Survivor - Eye of the Tiger", "AC/DC - Back in Black", "AC/DC - Thunderstruck", "AC/DC - Highway to Hell", "ZZ Top - Gimme All Your Lovin'", "ZZ Top - Sharp Dressed Man", "Lenny Kravitz - Are You Gonna Go My Way", "Lenny Kravitz - Fly Away", "The White Stripes - Seven Nation Army", "Imagine Dragons - Believer", "Imagine Dragons - Thunder", "Imagine Dragons - Radioactive", "Eminem - Lose Yourself", "Eminem - Till I Collapse", "Kanye West - Stronger", "Europe - The Final Countdown", "Bon Jovi - It's My Life", "Bon Jovi - You Give Love a Bad Name", "Joan Jett & The Blackhearts - I Love Rock 'n' Roll", "Toto - Hold the Line", "Foreigner - Juke Box Hero", "Foreigner - Hot Blooded", "Van Halen - Jump", "Billy Idol - Mony Mony", "Billy Idol - Rebel Yell", "Tina Turner - The Best", "Tina Turner - Nutbush City Limits", "P!nk - So What", "P!nk - Get the Party Started", "Kelly Clarkson - Stronger (What Doesn't Kill You)", "Katy Perry - Roar", "Katy Perry - Firework", "Sia - Unstoppable", "Rachel Platten - Fight Song", "Beyoncé - Crazy in Love", "Destiny's Child - Survivor", "Gwen Stefani - Hollaback Girl", "Shakira - Hips Don't Lie", "Shakira - Whenever, Wherever", "Ricky Martin - Livin' la Vida Loca", "Jennifer Lopez - On the Floor", "Pitbull feat. Ke$ha - Timber", "OutKast - Hey Ya!", "Gnarls Barkley - Crazy", "Jamiroquai - Canned Heat", "Jamiroquai - Virtual Insanity", "Justin Timberlake - Can't Stop the Feeling!", "Bruno Mars - 24K Magic", "Bruno Mars - Treasure", "Pharrell Williams - Happy", "Lizzo - Juice", "Lizzo - Good as Hell", "Meghan Trainor - All About That Bass", "Maroon 5 - Moves like Jagger", "Maroon 5 - Sugar", "Robbie Williams - Let Me Entertain You", "Robbie Williams - Rock DJ", "Fatboy Slim - Right Here, Right Now", "Fatboy Slim - The Rockafeller Skank", "Run-DMC & Aerosmith - Walk This Way", "Run-DMC - It's Tricky", "Beastie Boys - (You Gotta) Fight for Your Right (To Party!)", "House of Pain - Jump Around", "Technotronic - Pump Up the Jam", "C+C Music Factory - Gonna Make You Sweat (Everybody Dance Now)", "Snap! - The Power", "MC Hammer - U Can't Touch This", "Vanilla Ice - Ice Ice Baby", "Salt-N-Pepa - Push It", "Will Smith - Gettin' Jiggy wit It", "Wham! - Wake Me Up Before You Go-Go", "Duran Duran - Hungry like the Wolf", "Simple Minds - Alive and Kicking", "INXS - Need You Tonight", "INXS - New Sensation", "U2 - Vertigo", "U2 - Beautiful Day", "The Rolling Stones - Start Me Up", "The Rolling Stones - (I Can't Get No) Satisfaction", "Deep Purple - Smoke on the Water", "Status Quo - Rockin' All Over the World", "Status Quo - Whatever You Want", "Bryan Adams - Summer of '69", "Bruce Springsteen - Born in the U.S.A.", "Bruce Springsteen - Dancing in the Dark", "Huey Lewis & The News - The Power of Love", "Kenny Loggins - Danger Zone", "Joe Cocker - Unchain My Heart", "Spider Murphy Gang - Skandal im Sperrbezirk", "Peter Fox - Alles neu", "Seeed - Ding", "Die Fantastischen Vier - MfG", "Culcha Candela - Hamma!", "Sportfreunde Stiller - '54, '74, '90, 2010", "The Black Eyed Peas - Pump It"], "c": ["Earth, Wind & Fire - September", "Lipps Inc. - Funkytown", "Irene Cara - Flashdance... What a Feeling", "Eurythmics - Sweet Dreams (Are Made of This)", "Depeche Mode - Just Can't Get Enough", "Bon Jovi - Livin' on a Prayer", "Haddaway - What Is Love", "Culture Beat - Mr. Vain", "Corona - The Rhythm of the Night", "Gala - Freed from Desire", "Helene Fischer - Atemlos durch die Nacht", "Avicii - Wake Me Up", "Calvin Harris - Summer", "David Guetta feat. Sia - Titanium", "Coldplay - A Sky Full of Stars", "Dua Lipa - Don't Start Now", "Madonna - Hung Up", "Robin Schulz - Sugar", "Avicii - Levels", "Rihanna feat. Calvin Harris - We Found Love", "Calvin Harris feat. Ellie Goulding - I Need Your Love", "Swedish House Mafia - Don't You Worry Child", "Alesso - Heroes (We Could Be)", "Clean Bandit feat. Jess Glynne - Rather Be", "Snap! - Rhythm Is a Dancer", "Dr. Alban - It's My Life", "La Bouche - Be My Lover", "2 Unlimited - No Limit", "Real McCoy - Another Night", "Captain Hollywood Project - More and More", "Masterboy - Feel the Heat of the Night", "Vengaboys - Boom, Boom, Boom, Boom!!", "Vengaboys - We Like to Party!", "Eiffel 65 - Blue (Da Ba Dee)", "Alice Deejay - Better Off Alone", "ATB - 9 PM (Till I Come)", "Modjo - Lady (Hear Me Tonight)", "Stardust - Music Sounds Better with You", "Daft Punk - One More Time", "Spiller - Groovejet (If This Ain't Love)", "Kylie Minogue - Can't Get You Out of My Head", "Kylie Minogue - Spinning Around", "Cher - Believe", "Madonna - Music", "Pet Shop Boys - Go West", "Pet Shop Boys - It's a Sin", "New Order - Blue Monday", "Erasure - A Little Respect", "Bronski Beat - Smalltown Boy", "Donna Summer - I Feel Love", "Gloria Gaynor - I Will Survive", "Village People - Y.M.C.A.", "Boney M. - Daddy Cool", "ABBA - Gimme! Gimme! Gimme! (A Man After Midnight)", "ABBA - Voulez-Vous", "Sister Sledge - Lost in Music", "Chic - Le Freak", "Michael Jackson - Don't Stop 'Til You Get Enough", "Michael Jackson - Beat It", "Whitney Houston - I Wanna Dance with Somebody (Who Loves Me)", "Kool & The Gang - Celebration", "The Weather Girls - It's Raining Men", "Dead or Alive - You Spin Me Round (Like a Record)", "Modern Talking - You're My Heart, You're My Soul", "Modern Talking - Brother Louie", "C.C. Catch - I Can Lose My Heart Tonight", "Sandra - Maria Magdalena", "Bananarama - Venus", "Laura Branigan - Self Control", "Taylor Dayne - Tell It to My Heart", "Lady Gaga - Just Dance", "Lady Gaga - Poker Face", "The Black Eyed Peas - I Gotta Feeling", "LMFAO - Party Rock Anthem", "Flo Rida - Good Feeling", "David Guetta feat. Kelly Rowland - When Love Takes Over", "Bob Sinclar - Love Generation", "Robin Schulz - Prayer in C", "Felix Jaehn feat. Jasmine Thompson - Ain't Nobody (Loves Me Better)", "Lost Frequencies - Are You with Me", "Purple Disco Machine - Hypnotized", "Purple Disco Machine & Sophie and the Giants - In the Dark", "Dua Lipa - Hallucinate", "The Weeknd - Blinding Lights", "Ava Max - Kings & Queens", "Ava Max - Sweet but Psycho", "Tiësto - The Business", "Meduza feat. Goodboys - Piece of Your Heart", "Joel Corry feat. MNEK - Head & Heart", "Calvin Harris & Dua Lipa - One Kiss", "Sigala - Easy Love", "Jax Jones feat. RAYE - You Don't Know Me", "Martin Solveig - Hello", "The Killers - Mr. Brightside", "Florence + The Machine - Dog Days Are Over", "Katrina & The Waves - Walking on Sunshine", "Queen - Don't Stop Me Now", "Kim Wilde - You Came", "Dr. Alban - Sing Hallelujah!", "Tina Charles - I Love to Love (But My Baby Loves to Dance)"], "p": ["ABBA - Dancing Queen", "ABBA - Mamma Mia", "ABBA - Waterloo", "The Beatles - Twist and Shout", "The Beatles - Ob-La-Di, Ob-La-Da", "The Monkees - Daydream Believer", "The Turtles - Happy Together", "The Beach Boys - Surfin' U.S.A.", "The Beach Boys - Kokomo", "Chuck Berry - Johnny B. Goode", "Elvis Presley - Jailhouse Rock", "Elvis Presley - Suspicious Minds", "Bill Haley & His Comets - Rock Around the Clock", "The Proclaimers - I'm Gonna Be (500 Miles)", "Dexys Midnight Runners - Come On Eileen", "Cyndi Lauper - Girls Just Want to Have Fun", "Madness - Our House", "Madness - One Step Beyond", "The B-52's - Love Shack", "Wham! - Club Tropicana", "Hot Chocolate - You Sexy Thing", "Boney M. - Rivers of Babylon", "Boney M. - Rasputin", "Dschinghis Khan - Moskau", "Dschinghis Khan - Dschinghis Khan", "Nena - 99 Luftballons", "Nena - Irgendwie, irgendwo, irgendwann", "Spider Murphy Gang - Sommer in der Stadt", "Hubert Kah - Sternenhimmel", "Markus - Ich will Spaß", "Peter Schilling - Major Tom (Völlig losgelöst)", "Falco - Rock Me Amadeus", "Falco - Der Kommissar", "Trio - Da Da Da", "Geier Sturzflug - Bruttosozialprodukt", "Münchener Freiheit - Ohne dich (schlaf' ich heut' Nacht nicht ein)", "Wolfgang Petry - Wahnsinn", "Jürgen Drews - Ein Bett im Kornfeld", "Udo Jürgens - Griechischer Wein", "Udo Jürgens - Aber bitte mit Sahne", "Udo Jürgens - Mit 66 Jahren", "Howard Carpendale - Hello Again", "Roland Kaiser - Joana", "Roland Kaiser - Santa Maria", "Andrea Berg - Du hast mich tausendmal belogen", "Helene Fischer - Herzbeben", "DJ Ötzi - Hey Baby (Uhh, Ahh)", "DJ Ötzi & Nik P. - Ein Stern (... der deinen Namen trägt)", "Matthias Reim - Verdammt, ich lieb' dich", "Klaus Lage - 1000 und 1 Nacht (Zoom!)", "Juli - Perfekte Welle", "Wir sind Helden - Denkmal", "Die Toten Hosen - Tage wie diese", "Mark Forster - Chöre", "Mark Forster - Au revoir", "Clueso - Gewinner", "Sarah Connor - Vincent", "Lena - Satellite", "Village People - In the Navy", "The Isley Brothers - Shout", "The Contours - Do You Love Me", "Martha Reeves & The Vandellas - Dancing in the Street", "The Jackson 5 - ABC", "The Jackson 5 - I Want You Back", "Stevie Wonder - Superstition", "Stevie Wonder - Sir Duke", "Aretha Franklin - Think", "Aretha Franklin - Respect", "The Supremes - You Can't Hurry Love", "Diana Ross - Upside Down", "Lionel Richie - All Night Long (All Night)", "Kool & The Gang - Get Down On It", "Earth, Wind & Fire - Let's Groove", "Shakin' Stevens - This Ole House", "Shakin' Stevens - Oh Julie", "Smokie - Living Next Door to Alice", "Smokie - Lay Back in the Arms of Someone", "Suzi Quatro - Can the Can", "Sweet - The Ballroom Blitz", "Mungo Jerry - In the Summertime", "Middle of the Road - Chirpy Chirpy Cheep Cheep", "Las Ketchup - The Ketchup Song (Aserejé)", "Los del Río - Macarena", "Lou Bega - Mambo No. 5 (A Little Bit of...)", "Bellini - Samba de Janeiro", "Shaggy - It Wasn't Me", "Inner Circle - Sweat (A La La La La Long)", "Eddy Grant - Gimme Hope Jo'anna", "Harry Belafonte - Banana Boat Song (Day-O)", "Kaoma - Lambada", "Mr. President - Coco Jamboo", "Scatman John - Scatman (Ski-Ba-Bop-Ba-Dop-Bop)", "Toni Basil - Mickey", "Men at Work - Down Under", "Billy Ocean - Get Outta My Dreams, Get into My Car", "Kim Wilde - Kids in America", "Bonnie Tyler - Holding Out for a Hero", "Rednex - Cotton Eye Joe", "Neil Diamond - Sweet Caroline", "Tom Jones - It's Not Unusual"]};
+
+
+const SPR={gen:['Zehn Minuten für euch. Der Rest des Tages darf warten.','Eure Knie haben angerufen. Sie sagen Danke.','Bewegung ist die beste Medizin, die es ohne Rezept gibt.','Der Kaffee wartet. Nach dem Training schmeckt er doppelt so gut.','Beweglich bleiben heißt, das Leben weiter mit offenen Armen zu empfangen.','Nicht perfekt, sondern regelmäßig. Das ist das ganze Geheimnis.','Wer morgens lacht, hat den Tag schon halb gewonnen.','Zu zweit ist sogar der Muskelkater nur halb so schlimm.','Heute ist ein guter Tag, um stolz auf sich zu sein.','Langsam ist auch schnell, solange man nicht stehen bleibt.','Der innere Schweinehund hat heute frei.','Jede Wiederholung ist ein kleines Dankeschön an euren Körper.','Atmen, lächeln, bewegen. Mehr braucht es nicht.','Ihr müsst nicht die Besten sein. Nur ein bisschen besser als gestern.','Die Matte liegt. Der schwerste Teil ist schon geschafft.','Wer rastet, der rostet. Heute werden die Gelenke geölt.','Ein starker Rücken trägt euch durch den ganzen Tag.','Heute schon gelacht? Spätestens beim Toten Käfer klappt es.','Kleine Schritte, jeden Tag. So wachsen große Dinge.','Der Tag gehört denen, die früh die Matte ausrollen.'],
+1:['Montag. Der Tag, an dem Helden ihre Matte ausrollen.','Neue Woche, neue Runde. Und ihr seid dabei.'],2:['Dienstag ist Krafttag. Die Wasserflaschen zittern schon.'],3:['Bergfest! Ab heute geht es bergab. Nur nicht mit der Laune.'],4:['Donnerstag. Fast Wochenende, aber erst wird noch ein bisschen geschwitzt.'],5:['Freitag. Heute darf geplantscht werden.']};
+const PROG={1:'Beweglichkeit & Rumpf',2:'Kraft, knieschonend',3:'Cardio ohne Springen',4:'Partner & Gleichgewicht'};
+const BADGES=[{id:'b1',n:'Erste Einheit',d:'Das erste Training geschafft'},{id:'wk',n:'Volle Woche',d:'Mo bis Fr komplett'},{id:'fr',n:'Frühaufsteher',d:'Training vor 6:30 Uhr'},{id:'t10',n:'10 Einheiten',d:'Zehnmal dabei gewesen'},{id:'ws',n:'Wasserratte',d:'10× geschwommen'},{id:'s10',n:'Dranbleiber',d:'Serie von 10 Werktagen'},{id:'t50',n:'50 Einheiten',d:'Ein halbes Hundert'},{id:'t100',n:'Hundert!',d:'100 Einheiten'}];
+const REW=[{n:'Lieblingsfrühstück am Wochenende',k:'wk'},{n:'Neue Playlist zusammenstellen',c:10},{n:'Zusammen essen gehen',c:20},{n:'Therme oder Sauna',c:40},{n:'Etwas Neues für den Sport',c:60},{n:'Ein Wochenendausflug',c:100}];
+
+// ---------- Speicher
+const KEY='morgenfit.v1';
+const DEF={names:['Person 1','Person 2'],set:{work:30,pause:15,rounds:2,warm:45,cool:30,voice:true,gong:true,rate:.88,vname:'',vol:1,amode:'ambient',sc:['Fit Beweglichkeit','Fit Kraft','Fit Cardio','Fit Partner']},log:{}};
+const APPURL='https://claude.ai/artifact/AWNtqSyp18v5JLAoFkMhrP';
+const norm=x=>{x=JSON.parse(JSON.stringify(x||{}));const o={...DEF,...x,set:{...DEF.set,...(x.set||{})},log:x.log||{}};o.set.sc=[...(o.set.sc||DEF.set.sc)];o.names=[...(o.names||DEF.names)];return o};
+let S;try{S=norm(JSON.parse(localStorage.getItem(KEY)))}catch(e){S=norm(DEF)}
+let DOC=null,store='lokal',writing=false,dirty=false,wt=null;
+async function flush(){if(!DOC)return;if(writing){dirty=true;return}writing=true;try{await DOC.set(JSON.parse(JSON.stringify(S)));store='konto'}catch(e){store='fehler'}writing=false;if(dirty){dirty=false;flush()}}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}clearTimeout(wt);wt=setTimeout(flush,800)};
+(async()=>{try{if(!window.claude||!window.claude.use)return;const [db,user]=await Promise.all([window.claude.use('db'),window.claude.use('user')]);if(!db||!user)return;const uid=await user.id();if(!uid)return;
+ DOC=db.doc('data/users/'+uid+'/morgenfit');const snap=await DOC.get();
+ if(snap.exists){S=norm(snap.data());try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}store='konto'}else{await DOC.set(JSON.parse(JSON.stringify(S)));store='konto'}
+ if(!R)render()}catch(e){store='fehler'}})();
+
+// ---------- Datum
+const pad=n=>String(n).padStart(2,'0');
+const dk=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const kw=d=>{const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const n=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-n);const y=new Date(Date.UTC(t.getUTCFullYear(),0,1));return Math.ceil(((t-y)/864e5+1)/7)};
+const addD=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
+const monday=d=>addD(d,-((d.getDay()+6)%7));
+const WT=['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+const doy=d=>Math.floor((d-new Date(d.getFullYear(),0,0))/864e5);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+const CL={"sg0": "Zehn Minuten für euch. Der Rest des Tages darf warten.", "sg1": "Eure Knie haben angerufen. Sie sagen Danke.", "sg2": "Bewegung ist die beste Medizin, die es ohne Rezept gibt.", "sg3": "Der Kaffee wartet. Nach dem Training schmeckt er doppelt so gut.", "sg4": "Beweglich bleiben heißt, das Leben weiter mit offenen Armen zu empfangen.", "sg5": "Nicht perfekt, sondern regelmäßig. Das ist das ganze Geheimnis.", "sg6": "Wer morgens lacht, hat den Tag schon halb gewonnen.", "sg7": "Zu zweit ist sogar der Muskelkater nur halb so schlimm.", "sg8": "Heute ist ein guter Tag, um stolz auf sich zu sein.", "sg9": "Langsam ist auch schnell, solange man nicht stehen bleibt.", "sg10": "Der innere Schweinehund hat heute frei.", "sg11": "Jede Wiederholung ist ein kleines Dankeschön an euren Körper.", "sg12": "Atmen, lächeln, bewegen. Mehr braucht es nicht.", "sg13": "Ihr müsst nicht die Besten sein. Nur ein bisschen besser als gestern.", "sg14": "Die Matte liegt. Der schwerste Teil ist schon geschafft.", "sg15": "Wer rastet, der rostet. Heute werden die Gelenke geölt.", "sg16": "Ein starker Rücken trägt euch durch den ganzen Tag.", "sg17": "Heute schon gelacht? Spätestens beim Toten Käfer klappt es.", "sg18": "Kleine Schritte, jeden Tag. So wachsen große Dinge.", "sg19": "Der Tag gehört denen, die früh die Matte ausrollen.", "s1_0": "Montag. Der Tag, an dem Helden ihre Matte ausrollen.", "s1_1": "Neue Woche, neue Runde. Und ihr seid dabei.", "s2_0": "Dienstag ist Krafttag. Die Wasserflaschen zittern schon.", "s3_0": "Bergfest! Ab heute geht es bergab. Nur nicht mit der Laune.", "s4_0": "Donnerstag. Fast Wochenende, aber erst wird noch ein bisschen geschwitzt.", "s5_0": "Freitag. Heute darf geplantscht werden.", "n_katze": "Als Nächstes: Katze, Kuh.", "t_katze": "Ausatmen: Rücken rund. Einatmen: leichtes Hohlkreuz.", "n_wgs": "Als Nächstes: Weltbeste Dehnung.", "t_wgs": "Hinteres Knie auf der Matte, Arm zur Decke aufdrehen.", "n_kaefer": "Als Nächstes: Toter Käfer.", "t_kaefer": "Unteren Rücken in den Boden drücken, Arm und Bein gegengleich strecken.", "n_seit": "Als Nächstes: Seitstütz auf den Knien.", "t_seit": "Ellbogen unter der Schulter, Hüfte hoch bis zur Linie.", "n_bruecke": "Als Nächstes: Brücke.", "t_bruecke": "Füße nah am Po, über die Fersen hochdrücken, oben Po anspannen.", "n_kind": "Als Nächstes: Kind-Position mit Drehung.", "t_kind": "Bei Kniedruck ein Kissen zwischen Po und Fersen. Dann einen Arm aufdrehen.", "morgen": "Guten Morgen!", "pause": "Pause.", "r2": "Pause. Runde 2.", "r3": "Pause. Runde 3.", "warm1": "Aufwärmen.", "warm2": "Auf der Stelle marschieren, Arme kreisen, Schultern rollen.", "seite": "Seite wechseln.", "cool1": "Stark gemacht!", "cool2": "Zum Ausklang die Oberschenkel dehnen.", "fin1": "Super gemacht!", "fin2": "Training geschafft.", "b_b1": "Neues Abzeichen: Erste Einheit.", "b_wk": "Neues Abzeichen: Volle Woche.", "b_fr": "Neues Abzeichen: Frühaufsteher.", "b_t10": "Neues Abzeichen: zehn Einheiten.", "b_ws": "Neues Abzeichen: Wasserratte.", "b_s10": "Neues Abzeichen: Dranbleiber.", "b_t50": "Neues Abzeichen: fünfzig Einheiten.", "b_t100": "Neues Abzeichen: Hundert!."};
+const sprO=()=>{const d=new Date(),w=d.getDay();const l=[...(SPR[w]||[]).map((t,i)=>({t,id:'s'+w+'_'+i})),...SPR.gen.map((t,i)=>({t,id:'sg'+i}))];return l[doy(d)%l.length]};
+const spruch=()=>sprO().t;
+
+// ---------- Auswertung
+const done=k=>{const e=S.log[k];return e&&(e.train||e.swim)};
+function stats(){
+ const v=Object.values(S.log);const tr=v.filter(e=>e.train).length,sw=v.filter(e=>e.swim).length;
+ let d=new Date(),serie=0;if(!done(dk(d)))d=addD(d,-1);
+ for(let i=0;i<500;i++){const w=d.getDay();if(w>0&&w<6){if(done(dk(d)))serie++;else break}d=addD(d,-1)}
+ let full=false;for(const k of Object.keys(S.log)){const m=monday(new Date(k+'T12:00'));if([0,1,2,3,4].every(i=>done(dk(addD(m,i))))){full=true;break}}
+ const early=v.some(e=>e.train&&e.time&&e.time<'06:30');
+ const m=monday(new Date());const week=[0,1,2,3,4].filter(i=>done(dk(addD(m,i)))).length;
+ return{tr,sw,tot:tr+sw,serie,full,early,week}
+}
+function got(st){return{b1:st.tr>=1,wk:st.full,fr:st.early,t10:st.tot>=10,ws:st.sw>=10,s10:st.serie>=10,t50:st.tot>=50,t100:st.tot>=100}}
+
+// ---------- Uhr
+function clockSVG(){let t='';for(let i=0;i<12;i++){const a=i*Math.PI/6,r1=i%3?40:36;t+=`<line x1="${50+r1*Math.sin(a)}" y1="${50-r1*Math.cos(a)}" x2="${50+44*Math.sin(a)}" y2="${50-44*Math.cos(a)}" stroke="currentColor" stroke-width="${i%3?2:4}" stroke-linecap="round"/>`}
+ return `<svg class="clk" viewBox="0 0 100 100" aria-label="Uhrzeit"><circle cx="50" cy="50" r="48" fill="currentColor" opacity=".12"/><circle cx="50" cy="50" r="48" fill="none" stroke="currentColor" stroke-width="3"/>${t}<line class="hh" x1="50" y1="50" x2="50" y2="26" stroke="currentColor" stroke-width="6" stroke-linecap="round"/><line class="mh" x1="50" y1="50" x2="50" y2="14" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><line class="sh" x1="50" y1="58" x2="50" y2="12" stroke="#c06a55" stroke-width="2" stroke-linecap="round"/><circle cx="50" cy="50" r="4" fill="currentColor"/></svg>`}
+function tickClocks(){const d=new Date(),s=d.getSeconds(),m=d.getMinutes()+s/60,hr=(d.getHours()%12)+m/60;document.querySelectorAll('.clk').forEach(c=>{c.querySelector('.hh').setAttribute('transform',`rotate(${hr*30} 50 50)`);c.querySelector('.mh').setAttribute('transform',`rotate(${m*6} 50 50)`);c.querySelector('.sh').setAttribute('transform',`rotate(${s*6} 50 50)`)})}
+setInterval(tickClocks,1000);
+// ---------- Figur zeichnen
+const VBY={};for(const k in POSES){const ys=POSES[k].flat().map(p=>p[1]);const lo=Math.min(...ys)-12,hi=132;VBY[k]=Math.round((lo+hi)/2-70)}
+function figSVG(id,cls=''){const x=ALL[id]||{};const g=c=>`<g class="${c}" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><polyline class="b2" opacity=".45"/><polyline class="b1" opacity=".45"/><polyline class="sp"/><polyline class="a1"/><polyline class="l1"/><circle class="hd" r="9" fill="currentColor" stroke="none"/></g>`;
+ return `<svg class="fig-a ${cls}" data-ex="${id}" viewBox="0 ${VBY[id]||0} 200 140" role="img" aria-label="${esc(x.name||'')}"><rect x="10" y="127" width="180" height="5" rx="2.5" fill="currentColor" opacity=".18"/>${x.prop?`<g fill="currentColor" opacity=".3">${x.prop}</g>`:''}${g('f1')}${x.pair?`<g opacity=".6">${g('f2')}</g>`:''}</svg>`}
+const lerp=(a,b,t)=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t];
+function setG(G,p){const pl=(...ix)=>ix.map(i=>p[i].join(',')).join(' ');const q=s=>G.querySelector(s);
+ q('.b2').setAttribute('points',pl(1,6,7));q('.b1').setAttribute('points',pl(3,10,11));q('.sp').setAttribute('points',pl(1,2,3));q('.a1').setAttribute('points',pl(1,4,5));q('.l1').setAttribute('points',pl(3,8,9));
+ q('.hd').setAttribute('cx',p[0][0]);q('.hd').setAttribute('cy',p[0][1])}
+function drawFig(svg,now){const id=svg.dataset.ex,P=POSES[id];if(!P)return;const per=((ALL[id]||{}).per||3)*1000;const t=(1-Math.cos(now/per*2*Math.PI))/2;
+ const p=P[0].map((a,i)=>lerp(a,P[1][i],t));setG(svg.querySelector('.f1'),p);const g2=svg.querySelector('.f2');if(g2)setG(g2,MIR(p))}
+const still=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function loop(now){const H=innerHeight;document.querySelectorAll('.fig-a').forEach(s=>{const r=s.getBoundingClientRect();if(r.width&&r.bottom>0&&r.top<H)drawFig(s,still?0:now)});requestAnimationFrame(loop)}
+requestAnimationFrame(loop);
+
+// ---------- Ton & Sprache
+let AC=null;
+function unlock(){try{if(navigator.audioSession&&S.set.amode!=='auto')navigator.audioSession.type=S.set.amode}catch(e){}try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();AC.resume()}catch(e){}try{speechSynthesis.speak(new SpeechSynthesisUtterance(''))}catch(e){}}
+function beep(f=880,d=.15,v=.6){if(!S.set.gong||!AC)return;v=Math.min(1,v*(S.set.vol||1));try{const o=AC.createOscillator(),g=AC.createGain();o.frequency.value=f;o.type='triangle';g.gain.setValueAtTime(v,AC.currentTime);g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+d);o.connect(g).connect(AC.destination);o.start();o.stop(AC.currentTime+d)}catch(e){}}
+const gong=()=>{beep(660,.6,.95);setTimeout(()=>beep(990,.8,.9),130)};
+let VOICE=null,VOICES=[];
+const vRank=x=>(/premium/i.test(x.name+x.voiceURI)?0:/erweitert|enhanced/i.test(x.name+x.voiceURI)?1:/anna|petra|helena|markus|yannick|viktor/i.test(x.name)?2:3);
+function pickVoice(){try{VOICES=speechSynthesis.getVoices().filter(x=>/^de/i.test(x.lang)).sort((a,b)=>vRank(a)-vRank(b));VOICE=VOICES.find(x=>x.voiceURI===S.set.vname)||VOICES[0]||null;if(tab==='einst'&&document.getElementById('vsel')&&!document.getElementById('vsel').options.length)render()}catch(e){}}
+try{pickVoice();speechSynthesis.onvoiceschanged=pickVoice}catch(e){}
+let sayId=0;
+// Liste von Ansage-Schlüsseln; zwischen den Teilen eine kurze Sprechpause
+function say(keys,end){
+ keys=Array.isArray(keys)?keys:[keys];const id=++sayId;
+ if(!S.set.voice){end&&setTimeout(end,4000);return}
+ try{speechSynthesis.cancel()}catch(e){}
+ const texts=keys.map(k=>CL[k]||k);let i=0;
+ const nx=()=>{if(id!==sayId)return;if(i>=texts.length){end&&end();return}
+  try{const u=new SpeechSynthesisUtterance(texts[i++]);u.lang='de-DE';if(VOICE)u.voice=VOICE;u.rate=S.set.rate||.88;u.onend=u.onerror=()=>setTimeout(nx,i<texts.length?900:0);speechSynthesis.speak(u)}catch(e){end&&setTimeout(end,4000)}};
+ nx();
+}
+const stopSay=()=>{sayId++;try{speechSynthesis.cancel()}catch(e){}};
+
+// ---------- Ansichten
+const V=document.getElementById('view');let tab='heute';
+function ring(n){const C=2*Math.PI*42,seg=C/5-5;let c='';for(let i=0;i<5;i++)c+=`<circle cx="50" cy="50" r="42" fill="none" stroke="${i<n?'var(--co)':'var(--line)'}" stroke-width="12" stroke-dasharray="${seg} ${C-seg}" stroke-dashoffset="${-i*C/5}" transform="rotate(-90 50 50)"/>`;return `<svg class="ring" viewBox="0 0 100 100" width="120" height="120">${c}<text x="50" y="58" text-anchor="middle" font-size="26" font-weight="700">${n}/5</text></svg>`}
+function pickHTML(withDays){const c=cur();return `<div class="pick">${withDays?[1,2,3,4].map(i=>`<button data-d="${i}" class="${i===c.d?'on':''}">${DAYN[i]}</button>`).join(''):''}${['A','B'].map(x=>`<button data-w="${x}" class="${x===c.wk?'on':''}">Woche ${x}</button>`).join('')}</div>`}
+function bindPick(){V.querySelectorAll('.pick button').forEach(b=>b.onclick=()=>{const c=cur();if(b.dataset.x!==undefined)c.x=+b.dataset.x;if(b.dataset.d)c.d=+b.dataset.d;if(b.dataset.w)c.wk=b.dataset.w;render()})}
+function heute(){
+ const d=new Date(),w=d.getDay(),st=stats(),k=dk(d),e=S.log[k]||{};const wk=kw(d),c=cur(),L=exs();
+ const tot=S.set.warm+S.set.rounds*L.length*(S.set.work+S.set.pause)+S.set.cool;
+ const isToday=c.wk===wkOf(d)&&c.d===defDay(d);
+ const note=!isToday?'Ihr habt eine andere Einheit gewählt.':w===5?'Freitag ist Schwimmtag. Kein Bad heute? Dann die Cardio-Einheit dieser Woche.':(w===0||w===6)?'Wochenende. Wer mag, wählt sich eine Einheit aus.':'Das Programm für heute.';
+ const sc=S.set.sc[c.d-1];
+ V.innerHTML=`
+ <div class="hdr"><div><h1>Guten Morgen, ${esc(S.names[1])} und ${esc(S.names[0])}</h1><div class="meta">${WT[w]}, ${d.getDate()}.${d.getMonth()+1}.${d.getFullYear()} · KW ${wk} · Woche ${wkOf(d)}</div></div>${clockSVG()}</div>
+ <div class="today">
+  <div class="card"><h2 style="margin:0">${DAYN[c.d]} ${c.wk} · ${PROG[c.d]}</h2>
+   <div class="meta">${note} Etwa ${Math.round(tot/60)} Minuten.</div>
+   ${pickHTML(true)}
+   <div class="plist">${L.map((x,i)=>`<div class="pitem${i>5?' xtra':''}">${figSVG(x.id)}${i>5?'Zusatz · '+LVL[c.x-1]+': ':''}${esc(x.name)}</div>`).join('')}</div>
+   <div style="margin:-6px 0 16px"><b>Zusatzübung je nach Verfassung</b><div class="pick" style="margin-top:6px">${['Keine',...LVL].map((l,i)=>`<button data-x="${i}" class="${(c.x||0)===i?'on':''}">${l}${i?' · '+esc(ALL[XTRA[c.wk+c.d][i-1]].name):''}</button>`).join('')}</div></div>
+   <button class="go" id="start">${e.train?'Nochmal trainieren':'Training starten'}</button>
+   <p class="meta" style="margin:8px 0 0">Musik: „Hey Siri, ${esc(sc)}“ zum Starten, „Hey Siri, Stopp“ zum Beenden.</p>
+  </div>
+  <div style="display:grid;gap:18px;align-content:start">
+   <div class="card prep"><h3 style="margin-bottom:8px">Bereitlegen für ${DAYN[c.d]} ${c.wk}</h3><ul class="need">${(NEED[c.wk+c.d]||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
+   <div class="card"><div class="ringbox">${ring(st.week)}<div><div class="meta">Diese Woche</div><div class="big">${st.serie}</div><div class="meta">Werktage am Stück</div></div></div></div>
+   <div class="card"><h3>Schwimmen</h3><p class="meta" style="margin:6px 0 12px">${e.swim?'Heute eingetragen. Stark!':'Wart ihr im Wasser? Dann hier eintragen.'}</p><button id="swim" style="width:100%">${e.swim?'Eintrag entfernen':'Heute geschwommen'}</button></div>
+  </div>
+ </div>`;
+ bindPick();
+  document.getElementById('start').onclick=startTraining;
+ document.getElementById('swim').onclick=()=>{const x=S.log[k]||{};x.swim=!x.swim;S.log[k]=x;if(!x.swim&&!x.train)delete S.log[k];save();render()};
+}
+function uebungen(){
+ const c=cur();
+ const card=x=>`<div class="card">${figSVG(x.id)}<h3 style="margin-top:12px">${esc(x.name)}</h3><p style="margin:6px 0 10px">${esc(x.tip)}${x.side&&!/Hälfte/.test(x.tip)?' Nach der Hälfte der Zeit die Seite wechseln.':''}</p><a class="btn" href="${x.v}" target="_blank" rel="noopener">${/results\?/.test(x.v)?'Videos suchen':'Video ansehen'}</a></div>`;
+ V.innerHTML=`<div><h1>Übungen</h1><div class="meta">Alle Einheiten von Woche ${c.wk}. Woche A läuft in geraden, Woche B in ungeraden Kalenderwochen.</div>${pickHTML(false)}</div>
+ ${[1,2,3,4].map(dd=>`<h2 style="margin:10px 0 0">${DAYN[dd]} ${c.wk} · ${PROG[dd]}</h2><div class="exgrid">${PLAN[c.wk][dd].map(id=>card(ALL[id])).join('')}</div><p class="meta" style="margin:0">Zusatzübung: ${XTRA[c.wk+dd].map((id,i)=>LVL[i]+' – '+esc(ALL[id].name)).join(' · ')}</p>`).join('')}
+ <h2 style="margin:10px 0 0">Nur als Zusatzübung</h2><div class="exgrid">${EXTRA.map(card).join('')}</div>
+ <h2 style="margin:10px 0 0">Jeden Tag</h2><div class="exgrid">${[WARM,COOL].map(x=>card({...x,v:'https://www.youtube.com/results?search_query='+encodeURIComponent(x.id==='warm'?'Aufwärmen auf der Stelle marschieren':'Oberschenkel vorne dehnen stehend')})).join('')}</div>`;
+ bindPick();
+}
+function erfolge(){
+ const st=stats(),g=got(st),m=monday(new Date()),today=dk(new Date());
+ let cal='<span></span>'+['Mo','Di','Mi','Do','Fr'].map(x=>`<b style="text-align:center">${x}</b>`).join('');
+ for(let wv=4;wv>=0;wv--){const mm=addD(m,-7*wv);cal+=`<span class="meta">KW ${kw(mm)}</span>`;for(let i=0;i<5;i++){const dd=addD(mm,i),k=dk(dd),e=S.log[k]||{};cal+=`<i class="${e.train&&e.swim?'ts':e.train?'t':e.swim?'s':''} ${k===today?'now':''}">${dd.getDate()}</i>`}}
+ const kn=Object.entries(S.log).filter(([k,e])=>e.knee).sort().reverse().slice(0,5);
+ const dot=c=>`<span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${c==='g'?'var(--ok)':c==='y'?'var(--sun)':c==='r'?'var(--co)':'var(--line)'}"></span>`;
+ V.innerHTML=`<div><h1>Erfolge</h1></div>
+ <div class="stats">${[['Trainings',st.tr],['Schwimmen',st.sw],['Serie',st.serie],['Diese Woche',st.week+'/5']].map(([a,b])=>`<div class="card"><div class="meta">${a}</div><div class="big">${b}</div></div>`).join('')}</div>
+ <div class="card"><h2>Die letzten fünf Wochen</h2><div class="cal">${cal}</div><p class="meta" style="margin:10px 0 0">Rot: Training · Blau: Schwimmen</p></div>
+ <div class="card"><h2>Abzeichen</h2><div class="badges">${BADGES.map(b=>`<div class="badge ${g[b.id]?'got':''}"><b>${b.n}</b>${b.d}</div>`).join('')}</div></div>
+ <div class="card"><h2>Belohnungen</h2><div class="rew">${REW.map(r=>{const ok=r.k?g[r.k]:st.tot>=r.c;const pc=r.k?(ok?100:st.week*20):Math.min(100,st.tot/r.c*100);return `<div><div class="row" style="justify-content:space-between"><b>${esc(r.n)}</b><span class="meta">${ok?'verdient!':r.k?'volle Woche':st.tot+' von '+r.c}</span></div><div class="bar"><span style="width:${pc}%"></span></div></div>`}).join('')}</div></div>
+ <div class="card"><h2>Knie-Ampel</h2>${kn.length?kn.map(([k,e])=>`<div class="row" style="padding:6px 0;border-bottom:1px solid var(--line)"><span style="width:6.5em">${k.split('-').reverse().join('.')}</span>${S.names.map((n,i)=>`${dot(e.knee[i])} ${esc(n)}`).join(' &nbsp; ')}</div>`).join(''):'<p class="meta">Nach dem ersten Training erscheinen hier eure Einträge.</p>'}</div>`;
+}
+function einst(){
+ const s=S.set,opt=(id,arr,val,u)=>`<select id="${id}">${arr.map(a=>`<option value="${a}" ${a==val?'selected':''}>${a} ${u}</option>`).join('')}</select>`;
+ V.innerHTML=`<div><h1>Einstellungen</h1></div>
+ <div class="card"><h2>Namen</h2><div class="form"><label class="f">Person 1<input id="n0" value="${esc(S.names[0])}"></label><label class="f">Person 2<input id="n1" value="${esc(S.names[1])}"></label></div></div>
+ <div class="card"><h2>Ablauf</h2><div class="form">
+ <label class="f">Belastung${opt('work',[20,30,35,40,45],s.work,'Sek.')}</label>
+ <label class="f">Pause${opt('pause',[10,15,20],s.pause,'Sek.')}</label>
+ <label class="f">Runden${opt('rounds',[1,2,3],s.rounds,'')}</label>
+ <label class="f">Aufwärmen${opt('warm',[30,45,60,90],s.warm,'Sek.')}</label>
+ <label class="f">Ausklang${opt('cool',[30,45,60],s.cool,'Sek.')}</label></div>
+ <p class="meta" id="dur"></p>
+ <div class="row"><label class="sw"><input type="checkbox" id="voice" ${s.voice?'checked':''}>Sprachansagen</label><label class="sw"><input type="checkbox" id="gong" ${s.gong?'checked':''}>Signaltöne</label></div></div>
+ <div class="card"><h2>Stimme & Ton</h2><div class="form">
+ <label class="f">Stimme<select id="vsel">${VOICES.map(v=>`<option value="${esc(v.voiceURI)}" ${VOICE&&v.voiceURI===VOICE.voiceURI?'selected':''}>${esc(v.name)}${vRank(v)<2?' ★':''}</option>`).join('')}</select></label>
+ <label class="f">Sprechtempo<select id="rate">${[[.75,'sehr ruhig'],[.82,'ruhig'],[.88,'etwas langsamer'],[.95,'fast normal'],[1,'normal']].map(([v,l])=>`<option value="${v}" ${v==s.rate?'selected':''}>${l}</option>`).join('')}</select></label>
+ <label class="f">Lautstärke Signaltöne<select id="vol">${[[.4,'leise'],[.7,'mittel'],[1,'laut'],[1.6,'sehr laut']].map(([v,l])=>`<option value="${v}" ${v==s.vol?'selected':''}>${l}</option>`).join('')}</select></label>
+ <label class="f">Mit Musik<select id="amode">${[['ambient','A: mischen'],['transient','B: Musik kurz leiser'],['auto','C: Standard von iOS']].map(([v,l])=>`<option value="${v}" ${v==s.amode?'selected':''}>${l}</option>`).join('')}</select></label></div>
+ <div class="row" style="margin-top:12px"><button id="test">Ansage probehören</button></div>
+ <p class="meta">${VOICES.length?'Stimmen mit ★ sind die natürlicheren, erweiterten Stimmen.':'Noch keine deutsche Stimme gefunden. Seite einmal neu laden.'} Weitere Stimmen ladet ihr auf dem iPad unter Einstellungen › Bedienungshilfen › Gesprochene Inhalte › Stimmen › Deutsch, z. B. „Anna (Erweitert)“. Danach Safari einmal ganz schließen und neu öffnen.</p></div>
+ <div class="card"><h2>Musik</h2><p class="meta" style="margin-top:0">Die App kann Apple Music nicht selbst starten. Das übernimmt ein Kurzbefehl auf dem Home-Bildschirm: einmal antippen, die Musik läuft, dann diese App öffnen. Die Namen eurer Kurzbefehle:</p>
+ <div class="form">${['Beweglichkeit (Mo)','Kraft (Di)','Cardio (Mi, Fr)','Partner (Do)'].map((l,i)=>`<label class="f">${l}<input id="sc${i}" value="${esc(s.sc[i])}"></label>`).join('')}</div>
+ <details style="margin-top:14px"><summary>So legt ihr die Kurzbefehle an</summary>
+ <ol><li>In Apple Music die vier Playlists anlegen, am besten je etwa eine Stunde lang. Mit „Zufällig“ klingt dann jeder Morgen anders. Vorschläge stehen unten.</li>
+ <li>In der Kurzbefehle-App auf „+“ tippen und den Kurzbefehl genau so benennen wie oben, z. B. „Fit Beweglichkeit“.</li>
+ <li>Aktion „Musik wiedergeben“ hinzufügen, die passende Playlist wählen und „Zufällig“ einschalten. Mehr braucht der Kurzbefehl nicht.</li>
+ <li>Im Kurzbefehl auf „Teilen“ und dann „Zum Home-Bildschirm“ tippen.</li>
+ <li>Für die anderen drei Trainingsarten den Kurzbefehl duplizieren, umbenennen und die Playlist tauschen.</li></ol>
+ <p class="meta">Morgens: das Symbol „${esc(s.sc[0])}“ auf dem Home-Bildschirm antippen, dann Morgenfit öffnen. Statt des Symbols geht auch „Hey Siri, ${esc(s.sc[0])}“. Nach dem Training beendet „Hey Siri, Stopp“ die Musik.</p></details>
+ <details style="margin-top:6px"><summary>Song-Vorschläge: je 100 pro Playlist</summary>
+ <p class="meta">Das Tempo passt grob zur Trainingsart, die Angaben sind aber nicht nachgemessen. Mit „Liste kopieren“ könnt ihr eine Liste z. B. bei tunemymusic.com unter „Freier Text“ einfügen und daraus eine Apple-Music-Playlist machen lassen.</p>
+ ${[['b','Fit Beweglichkeit: ruhig und entspannt'],['k','Fit Kraft: kräftiger Groove'],['c','Fit Cardio: treibend'],['p','Fit Partner: gute Laune zum Mitsingen']].map(([k,t])=>`<details style="margin:6px 0 0 8px"><summary>${t}</summary><button class="cps" data-k="${k}" style="margin:6px 0">Liste kopieren</button><ol class="songs">${SONGS[k].map(x=>`<li>${esc(x)}</li>`).join('')}</ol></details>`).join('')}</details></div>
+ <div class="card"><h2>Daten</h2><p class="meta">${!window.claude?'Einstellungen und Trainings sind auf diesem iPad gespeichert. Die App funktioniert auch ohne Internet.':store==='konto'?'Einstellungen und Trainings sind in eurem Claude-Konto gespeichert und bleiben erhalten. Nur ihr seht sie.':store==='fehler'?'Speichern im Claude-Konto hat gerade nicht geklappt. Bitte die App neu laden.':'Verbindung zum Claude-Konto wird hergestellt … Falls das so bleibt: Seid ihr in Safari bei claude.ai angemeldet?'}</p><div class="row"><button id="exp">Daten kopieren</button><button id="reset">Alle Einträge löschen</button></div>
+ <details style="margin-top:12px"><summary>Daten übernehmen</summary><p class="meta">So zieht ihr eure Trainings in eine andere Version der App um: In der alten Version auf „Daten kopieren“ tippen, hier einfügen und übernehmen.</p><textarea id="imp" rows="4" style="width:100%;font:inherit;font-size:16px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:10px"></textarea><div class="row" style="margin-top:8px"><button id="impgo">Übernehmen</button><span class="meta" id="impmsg"></span></div></details></div>`;
+ const upd=()=>{const t=s.warm+s.rounds*6*(s.work+s.pause)+s.cool;document.getElementById('dur').textContent=`Dauer: etwa ${Math.floor(t/60)} Min. ${t%60?t%60+' Sek.':''}`};upd();
+ ['n0','n1'].forEach((id,i)=>document.getElementById(id).oninput=e=>{S.names[i]=e.target.value||('Person '+(i+1));save()});
+ ['work','pause','rounds','warm','cool'].forEach(id=>document.getElementById(id).onchange=e=>{s[id]=+e.target.value;save();upd()});
+ ['voice','gong'].forEach(id=>document.getElementById(id).onchange=e=>{s[id]=e.target.checked;save()});
+ document.getElementById('test').onclick=()=>{unlock();gong();setTimeout(()=>say(['pause','n_bruecke','t_bruecke']),700)};
+ const vs=document.getElementById('vsel');if(vs)vs.onchange=e=>{S.set.vname=e.target.value;VOICE=VOICES.find(x=>x.voiceURI===e.target.value)||VOICE;save()};
+ const rt=document.getElementById('rate');if(rt)rt.onchange=e=>{s.rate=+e.target.value;save()};
+
+ document.getElementById('vol').onchange=e=>{s.vol=+e.target.value;save();unlock();gong()};
+ document.getElementById('amode').onchange=e=>{s.amode=e.target.value;save()};
+ V.querySelectorAll('.cps').forEach(b=>b.onclick=()=>{try{navigator.clipboard.writeText(SONGS[b.dataset.k].join('\n')).then(()=>b.textContent='Kopiert!',()=>b.textContent='Kopieren nicht erlaubt')}catch(e){b.textContent='Kopieren nicht erlaubt'}});
+ [0,1,2,3].forEach(i=>document.getElementById('sc'+i).oninput=e=>{s.sc[i]=e.target.value.trim()||DEF.set.sc[i];save()});
+ const ex=document.getElementById('exp');ex.onclick=()=>{const t=JSON.stringify(S);try{navigator.clipboard.writeText(t).then(()=>ex.textContent='Kopiert!',()=>ex.textContent='Kopieren nicht erlaubt')}catch(e){ex.textContent='Kopieren nicht erlaubt'}};
+ document.getElementById('impgo').onclick=()=>{const m=document.getElementById('impmsg');try{const d=JSON.parse(document.getElementById('imp').value);if(!d||!d.set||!d.log)throw 0;S=norm(d);save();m.textContent='Übernommen.';setTimeout(render,800)}catch(e){m.textContent='Das sieht nicht nach kopierten Morgenfit-Daten aus.'}};
+ const r=document.getElementById('reset');r.onclick=()=>{if(r.dataset.c){S.log={};save();render()}else{r.dataset.c=1;r.textContent='Wirklich alles löschen?';r.style.background='var(--co)';r.style.color='#fff'}};
+}
+function render(){({heute,uebungen,erfolge,einst})[tab]();tickClocks();document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab))}
+document.getElementById('nav').onclick=e=>{const b=e.target.closest('button');if(b){tab=b.dataset.t;render();document.querySelector('main').scrollTop=0}};
+
+// ---------- Training
+const T=document.getElementById('tr');let R=null,wake=null;
+function steps(){const s=S.set,a=[{k:'warm',ex:WARM,s:s.warm}];for(let r=1;r<=s.rounds;r++)exs().forEach((x,i)=>{a.push({k:'pause',ex:x,s:s.pause,r,i});if(x.side){const h1=Math.round(s.work/2);a.push({k:'work',ex:x,s:h1,r,i,part:1});a.push({k:'sw',ex:x,s:3,r,i});a.push({k:'work',ex:x,s:s.work-h1,r,i,part:2})}else a.push({k:'work',ex:x,s:s.work,r,i})});a.push({k:'cool',ex:COOL,s:s.cool});return a}
+async function startTraining(){
+ unlock();try{wake=await navigator.wakeLock?.request('screen')}catch(e){}
+ const st=steps();R={st,i:-1,left:0,paused:false,total:st.reduce((a,b)=>a+b.s,0),before:got(stats())};
+ T.className='show intro';
+ T.innerHTML=`<div></div><div style="display:grid;align-content:center;gap:28px"><div class="intro-q">„${esc(spruch())}“</div></div><div class="ctr"><button id="skipi">Los geht's</button><button id="endi">Abbrechen</button></div>`;
+ let gone=false;const go=()=>{if(gone)return;gone=true;countdown()};
+ document.getElementById('skipi').onclick=go;document.getElementById('endi').onclick=close;
+ say(['morgen',sprO().id],()=>setTimeout(go,1200));
+}
+function countdown(){
+ let n=3;T.innerHTML=`<div></div><div class="clock" style="align-self:center"><div class="lab">Gleich geht's los</div><div class="sec" id="cd">3</div></div><div></div>`;
+ beep(700);const iv=setInterval(()=>{n--;if(!R){clearInterval(iv);return}if(n>0){document.getElementById('cd').textContent=n;beep(700)}else{clearInterval(iv);next()}},1000);
+}
+function next(){
+ R.i++;if(R.i>=R.st.length)return finish();
+ const p=R.st[R.i];R.left=p.s;R.half=false;
+ T.className='show '+p.k;
+ const lbl=p.k==='pause'?(p.r>1&&p.i===0?`Runde ${p.r} · Als Nächstes`:'Pause · Als Nächstes'):p.k==='work'?`${p.i>5?'Zusatzübung':'Übung '+(p.i+1)+' von 6'} · Runde ${p.r} von ${S.set.rounds}${p.part?' · Seite '+p.part:''}`:p.k==='sw'?'Wechsel':p.k==='warm'?'Aufwärmen':'Ausklang';
+ T.innerHTML=`<div class="top"><div class="prog"><span id="pg"></span></div><div class="topline"><span>${lbl}</span>${clockSVG()}<span id="rest" style="text-align:right"></span></div></div>
+ <div class="stage">${figSVG(p.ex.id)}<div class="clock"><div class="exn">${esc(p.ex.name)}</div><div class="sec" id="sec">${p.s}</div><div class="tip">${p.k==='sw'?'Seite wechseln und in Position gehen.':esc(p.ex.tip)}</div></div></div>
+ <div class="ctr"><button id="pz">Pause</button><button id="sk">Überspringen</button>${p.ex.v?`<a class="btn" href="${p.ex.v}" target="_blank" rel="noopener">Video</a>`:''}<button id="en">Beenden</button></div>`;
+ document.getElementById('pz').onclick=e=>{R.paused=!R.paused;e.target.textContent=R.paused?'Weiter':'Pause';if(R.paused)stopSay()};
+ document.getElementById('sk').onclick=()=>next();
+ const en=document.getElementById('en');en.onclick=()=>{if(en.dataset.c)close();else{en.dataset.c=1;en.textContent='Wirklich beenden?'}};
+ if(p.k==='warm'){gong();say(['warm1','warm2'])}
+ else if(p.k==='pause')say([p.r>1&&p.i===0?'r'+p.r:'pause','Als Nächstes: '+p.ex.name+'.',p.ex.tip]);
+ else if(p.k==='work')gong();
+ else if(p.k==='sw'){beep(1000,.25,.85);say(['Seite wechseln.'])}
+ else{gong();say(['cool1','cool2'])}
+ upd();tickClocks();
+}
+function upd(){
+ if(!R||R.i<0)return;const p=R.st[R.i];
+ const doneS=R.st.slice(0,R.i).reduce((a,b)=>a+b.s,0)+(p.s-R.left);const rest=R.total-doneS;
+ const s=document.getElementById('sec');if(s)s.textContent=Math.max(0,Math.ceil(R.left));
+ const pg=document.getElementById('pg');if(pg)pg.style.width=(doneS/R.total*100)+'%';
+ const re=document.getElementById('rest');if(re)re.textContent='noch '+Math.floor(rest/60)+':'+pad(Math.max(0,Math.ceil(rest%60)));
+}
+let last=0;
+setInterval(()=>{
+ const now=performance.now(),dt=(now-last)/1000;last=now;
+ if(!R||R.i<0||R.paused||R.fin||dt>2)return;
+ const p=R.st[R.i],before=Math.ceil(R.left);R.left-=dt;const after=Math.ceil(R.left);
+ if(after!==before){
+  if(p.k!=='work'&&after<=3&&after>0)beep(after===1?1100:800,.18,.85);
+  if(p.k==='work'&&after<=3&&after>0)beep(600,.14,.7);
+  if(p.k==='work'&&p.ex.side&&!p.part&&!R.half&&R.left<=p.s/2){R.half=true;beep(1000,.25,.85);say(['seite'])}
+ }
+ if(R.left<=0)next();else upd();
+},200);
+function finish(){
+ R.fin=true;const d=new Date(),k=dk(d),e=S.log[k]||{};e.train=true;e.prog=cur().wk+cur().d;e.time=pad(d.getHours())+':'+pad(d.getMinutes());S.log[k]=e;save();
+ try{wake?.release()}catch(x){}
+ const st=stats(),g=got(st),neu=BADGES.filter(b=>g[b.id]&&!R.before[b.id]);
+ say(['fin1','fin2',...neu.map(b=>'b_'+b.id)]);
+ T.className='show done';
+ T.innerHTML=`<div></div><div class="donebox"><h1>Geschafft!</h1>
+ <div class="stats"><div class="card"><div class="meta">Serie</div><div class="big">${st.serie}</div></div><div class="card"><div class="meta">Diese Woche</div><div class="big">${st.week}/5</div></div><div class="card"><div class="meta">Einheiten gesamt</div><div class="big">${st.tot}</div></div></div>
+ ${neu.map(b=>`<div class="new">Neues Abzeichen: ${b.n}. ${b.d}</div>`).join('')}
+ <div class="card"><h3>Wie geht es den Knien?</h3>${S.names.map((n,i)=>`<div class="knee" style="margin-top:12px"><b>${esc(n)}</b><div class="amp" data-p="${i}"><button class="g" data-v="g">gut</button><button class="y" data-v="y">zwickt</button><button class="r" data-v="r">schmerzt</button></div></div>`).join('')}</div>
+ <div class="card"><h3>Wie war's?</h3><div class="seg" style="margin-top:10px">${['zu leicht','passt','zu schwer'].map(x=>`<button data-f="${x}">${x}</button>`).join('')}</div></div>
+ <button class="go" id="fin">Fertig, ab unter die Dusche</button></div><div></div>`;
+ T.querySelectorAll('.amp').forEach(a=>a.onclick=ev=>{const b=ev.target.closest('button');if(!b)return;a.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));e.knee=e.knee||{};e.knee[a.dataset.p]=b.dataset.v;save()});
+ T.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{T.querySelectorAll('[data-f]').forEach(x=>x.classList.toggle('on',x===b));e.fb=b.dataset.f;save()});
+ document.getElementById('fin').onclick=close;
+ confetti();
+}
+function close(){R=null;stopSay();try{wake?.release()}catch(e){}T.className='';T.innerHTML='';render()}
+function confetti(){
+ if(still)return;const c=document.getElementById('conf'),x=c.getContext&&c.getContext('2d');if(!x)return;c.classList.add('on');c.width=innerWidth;c.height=innerHeight;
+ const cols=['#c06a55','#55658f','#e3c47e','#6f9f7f'];const ps=Array.from({length:140},()=>({x:Math.random()*c.width,y:-20-Math.random()*c.height*.5,v:2+Math.random()*4,r:Math.random()*6,s:5+Math.random()*7,c:cols[Math.random()*4|0]}));
+ const t0=performance.now();(function f(t){x.clearRect(0,0,c.width,c.height);ps.forEach(p=>{p.y+=p.v;p.r+=.08;x.save();x.translate(p.x,p.y);x.rotate(p.r);x.fillStyle=p.c;x.fillRect(-p.s/2,-p.s/4,p.s,p.s/2);x.restore()});if(t-t0<3500)requestAnimationFrame(f);else{x.clearRect(0,0,c.width,c.height);c.classList.remove('on')}})(t0);
+}
+render();
+if(!window.claude&&location.protocol==='https:'){try{navigator.serviceWorker&&navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}}
+}
+</script>
+</body>
+</html>
